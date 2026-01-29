@@ -1,7 +1,7 @@
 globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match;
 match_tolerance = 3;
 match_list = ds_priority_create();
-match_minimum = 5;	// If only match 5 words or less, then not considered as matched
+match_minimum = 4;	// If only match N words or less, then not considered as matched
 match_maximum = 10; // If match more than 10 word, then consider as matched and stop seeking
 time_tolerance = 1; 
 fuzzy_match = 0.8; // Acceptable letters mismatch (typo tolerance)
@@ -14,6 +14,7 @@ function string_contraction(str)
 }
 function srt_parse_time(text)
 {
+	text = string_trim(text);
 	text = string_replace_all(text, ",", ".")
 	var val = string_split(text, ":");
 	var time = real(val[2])+real(val[1])*60+real(val[0])*60*60;
@@ -204,10 +205,10 @@ function check_min_word(struct)
 	
 	if array_length(array)-1>match_tolerance
 	{
-		if index-ind<ceil(match_tolerance/2)
+		if index-ind<ceil(match_tolerance)
 		{
-			struct.matched[1]-=ceil(match_tolerance/2);
-			struct.matched[3]-=ceil(match_tolerance/2);
+			struct.matched[1]-=match_tolerance;
+			struct.matched[3]-=match_tolerance;
 		}
 	}
 	return true;
@@ -461,6 +462,7 @@ function estimate_start_time(source, reference, linestart, lineend, lineref, tim
 	var _output = 0, priority = 0
 	var s1 = array_length(time1);
 	var s2 = array_length(time2);
+	//show_debug_message("Comparing "+string(s1)+" and "+string(s2)+" timestamps")
 	for(var i=0; i<s1; i++)
 	for(var j=0; j<s2; j++)
 	{
@@ -476,7 +478,7 @@ function estimate_start_time(source, reference, linestart, lineend, lineref, tim
 		}
 		
 		if (_score>match_minimum) && (_score>priority) {priority=_score; _output=offset}
-		if priority>=s1
+		if priority>=match_maximum
 		{
 			return _output;
 		}

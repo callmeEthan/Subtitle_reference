@@ -40,6 +40,6 @@ repeat(100)
 			break
 	}
 	file_text_readln(file)
-	if file_text_eof(file) exit;
+	if file_text_eof(file) {file_text_close(file); exit}
 }
 if !file_text_eof(file) alarm[0]=1 else file_text_close(file)

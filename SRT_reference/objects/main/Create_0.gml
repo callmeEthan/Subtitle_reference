@@ -40,7 +40,7 @@ add_reference = function()
 	var file;
 	file = get_open_filename("Reference subtitle|*.srt", "");
 	if (file != "") {pending_reference[@0]=file; log("Added reference subtitle: "+string(file))}
-	if reference!=-1 reference.pending=file;
+	if reference!=-1 reference.pending=filename_name(file);
 	add_pending()
 }
 add_translate = function()
@@ -50,7 +50,7 @@ add_translate = function()
 	var file;
 	file = get_open_filename("Translated subtitle|*.srt", "");
 	if (file != "") {pending_reference[@1]=file; log("Added translated subtitle: "+string(file))}
-	if translate!=-1 translate.pending=file;
+	if translate!=-1 translate.pending=filename_name(file);
 	add_pending()
 }
 add_pending = function()
@@ -60,8 +60,8 @@ add_pending = function()
 	if pending_reference[0]==-1 || pending_reference[1]==-1 return false;
 	
 	var offset = 0;
-	if reference!=-1 offset=max(offset, floor(reference.duration*10))
-	if translate!=-1 offset=max(offset, floor(translate.duration*10))
+	if reference!=-1 offset=max(offset, floor(reference.duration+10))
+	if translate!=-1 offset=max(offset, floor(translate.duration+10))
 	
 	// Add reference data
 	if reference=-1
