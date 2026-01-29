@@ -20,9 +20,9 @@ Press (+) to add subtitle files.
 - You must add both reference and translated subtitle simultaneously
 - You can add more reference and translated subtitle, they will be appended to the current data automatically (Useful for TV->Movie type fan-edit).
 
-Once enough data is provided, you can click arrow button, or [Enter] to begin subtitle matching.
-When matching has finished, you can click the save button, or press [Ctrl+S] to export subtitle file.
-Pressed [F5] to restart application, to process different subtitle.
+Once enough data is provided, you can click arrow button, or [Enter] to begin subtitle matching.  
+When matching has finished, you can click the save button, or press [Ctrl+S] to export subtitle file.  
+Pressed [F5] to restart application, to process different subtitle.  
 > When saving subtitle, it also save to Debugging.txt, this file contain all the line failed to match, retained from the source subtitle. It can be useful for manual fixing/translation.
 
 #### Result
