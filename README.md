@@ -5,7 +5,7 @@ Want to share a fan-edit media? but subtitle in your prefered language is not av
 
 #### Requirement
 - Compiled for windows.
-- Only support .srt format subtitles:
+- Only support .srt format subtitles, 3 file are required:
 	- Subtitle for the edited media, use as a source, provided by the author, in the original language (english).
 	- Subtitle for the original/unedited media, to be used as reference, in the same language (english).
 	- Translated subtitle for the original/uneditted media, in the preferred language (ie Spanish), it must have timestamps synchornized to the referenced subtitle.
