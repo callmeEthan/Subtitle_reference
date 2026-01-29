@@ -27,14 +27,15 @@ Pressed [F5] to restart application, to process different subtitle.
 
 #### Result
 The result may not perfect as there are many factor, the tool mostly do guesswork to tolerate typo, missing words, line mismatch, time sync.   
-While not 100% perfect, the ouput can be 80-90% corrects if the provided data is sufficient and accurate.
+While not 100% perfect, the ouput can be 80-90% corrects if the provided data is sufficient and accurate.  
 Some factor to consider:
 - Line too short, matching with wrong part.
 - Translated line is too long or too short, timing mismatch.
 - Different phrasing and grammar causing mismatch (I am vs I'm)
 - Typo.
-- Edit change the context of the line.
-- Line unavailable in the original media (deleted scenes).
-- Micro cut, multiple lines are stiched together instead of a whole part.
+- Fan-edit change the context of the line.
+- Line is unavailable in the original media (deleted scenes).
+- Micro cuts, multiple lines are stiched together instead of a whole part.
 - ...
+
 **The final human touch will always be required for a perfect subitle.**
