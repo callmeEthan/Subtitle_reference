@@ -11,7 +11,7 @@ Want to share a fan-edit media? but subtitle in your prefered language is not av
 	- Translated subtitle for the original/uneditted media, in the preferred language (ie Spanish), it must have timestamps synchornized to the referenced subtitle.
 
 #### How it works?
-This tool break all subtitle lines down to arrays of words, then check each word to find matching lines.
+This tool break all subtitle lines down to arrays of words, then check each word to find matching lines.  
 Estimate the editted timestamp offset, then pull lines from translated subtitle to create new subtitle.
 #### Usage
 Download the latest release, extract and open exe file.
@@ -26,7 +26,7 @@ Pressed [F5] to restart application, to process different subtitle.
 > When saving subtitle, it also save to Debugging.txt, this file contain all the line failed to match, retained from the source subtitle. It can be useful for manual fixing/translation.
 
 #### Result
-The result may not perfect as there are many factor, the tool mostly do guesswork to tolerate typo, missing words, line mismatch, time sync. 
+The result may not perfect as there are many factor, the tool mostly do guesswork to tolerate typo, missing words, line mismatch, time sync.   
 While not 100% perfect, the ouput can be 80-90% corrects if the provided data is sufficient and accurate.
 Some factor to consider:
 - Line too short, matching with wrong part.
