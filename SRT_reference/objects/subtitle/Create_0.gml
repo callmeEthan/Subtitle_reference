@@ -66,6 +66,161 @@ get_timestamp = function(index, start=true)
 	else return buffer_peek(timestamp, (index*2+1)*buffer_sizeof(buffer_f32), buffer_f32);
 }
 
+display_array = function()
+{
+	var size = array_length(lines)
+	var _h = fontscale*fontsize;
+	var _space = string_width(" ")*fontsize;
+	var _y = 0;
+	scroll = scroll_clamp(size, scroll);
+	var _n = string_width("9999")*fontsize;
+
+	if pending==-1
+	{
+		draw_set_color(c_dkgray);
+		draw_rectangle(x, height-_h, x+width, height,false);
+		draw_rectangle(x, y, x+_n+_space, height-_h,false);
+		draw_set_color(c_white);
+		draw_text(x, height-_h, "lines: "+string(size)+", words: "+string(ds_map_size(words))+", total words: "+string(word_index));
+		draw_line(x+_n+_space, y, x+_n+_space, height-_h);
+	} else {
+		draw_set_color(c_orange);
+		draw_rectangle(x, height-_h, x+width, height,false);
+		draw_set_color(c_dkgray);
+		draw_rectangle(x, y, x+_n+_space, height-_h,false);
+		draw_set_color(c_black);
+		draw_text(x, height-_h, pending);
+		draw_set_color(c_white);
+		draw_line(x+_n+_space, y, x+_n+_space, height-_h);
+	}
+
+	var s = min(scroll+ceil(height/_h)-2, size);
+	for(var i=scroll; i<s; i++)
+	{
+		draw_text_transformed(x, _h*_y, i, fontsize, fontsize, 0);	// index
+		var _x = x+ _n+_space*2
+		var l = lines[i]
+	
+		var d = array_length(l);	// words
+		var ind = l[0];
+		for(var j=1; j<d; j++)
+		{
+			var _w = string_width(l[j]);
+			if _x+_w>x+width break;
+			var col = buffer_peek(visual, ind+j-1, buffer_u8);
+			switch(col)
+			{
+				default: break
+			
+				case 1:
+					draw_set_color(c_lime)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
+				case 2:
+					draw_set_color(c_orange)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
+				case 3:
+					draw_set_color(c_blue)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
+				case 4:
+					draw_set_color(c_red)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
+				case 5:
+					draw_set_color(c_green)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
+			}
+			draw_text_transformed(_x, _h*_y, l[j], fontsize, fontsize, 0);
+			
+			_x += _space+_w;
+		}
+		_y++;
+	}
+}
+display_original = function()
+{
+	var size = array_length(lines)
+	var _h = fontscale*fontsize;
+	var _space = string_width(" ")*fontsize;
+	var _y = 0;
+	scroll = scroll_clamp(size, scroll);
+	var _n = string_width("9999")*fontsize;
+
+	if pending==-1
+	{
+		draw_set_color(c_dkgray);
+		draw_rectangle(x, height-_h, x+width, height,false);
+		draw_rectangle(x, y, x+_n+_space, height-_h,false);
+		draw_set_color(c_white);
+		draw_text(x, height-_h, "lines: "+string(size)+", words: "+string(ds_map_size(words))+", total words: "+string(word_index));
+		draw_line(x+_n+_space, y, x+_n+_space, height-_h);
+	} else {
+		draw_set_color(c_orange);
+		draw_rectangle(x, height-_h, x+width, height,false);
+		draw_set_color(c_dkgray);
+		draw_rectangle(x, y, x+_n+_space, height-_h,false);
+		draw_set_color(c_black);
+		draw_text(x, height-_h, pending);
+		draw_set_color(c_white);
+		draw_line(x+_n+_space, y, x+_n+_space, height-_h);
+	}
+
+	var s = min(scroll+ceil(height/_h)-2, size);
+	for(var i=scroll; i<s; i++)
+	{
+		draw_text_transformed(x, _h*_y, i, fontsize, fontsize, 0);	// index
+		var _x = x+ _n+_space*2
+		var l = lines[i]
+		var ind = l[0];
+		var col = buffer_peek(visual, ind, buffer_u8);
+	
+		var str = string_replace(original[i], "\n", " ");
+		var _w = string_width(str);
+		switch(col)
+		{
+			default: break
+			
+			case 1:
+				draw_set_color(c_lime)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
+			case 2:
+				draw_set_color(c_orange)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
+			case 3:
+				draw_set_color(c_blue)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
+			case 4:
+				draw_set_color(c_red)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
+			case 5:
+				draw_set_color(c_green)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
+		}
+		draw_text_transformed(_x, _h*_y, str, fontsize, fontsize, 0);
+		_y++;
+	}
+	
+}
+pending = -1
+
 enum word_color
 {
 	null,
@@ -108,3 +263,4 @@ original = [];
 timestamp_seek = buffer_create(16, buffer_grow, 1);
 
 alarm[0]=1
+display = display_array;

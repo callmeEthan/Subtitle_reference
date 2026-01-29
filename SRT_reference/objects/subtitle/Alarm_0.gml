@@ -1,4 +1,5 @@
 /// @description Import srt subtitle
+pending = -1;
 repeat(100)
 {
 	var text = file_text_read_string(file);
@@ -6,6 +7,7 @@ repeat(100)
 	switch(format)
 	{
 		default:
+			if text=="" break;
 			if line_index<0 line_index=0 else line_index++;
 			format=1;
 			scroll = line_index;

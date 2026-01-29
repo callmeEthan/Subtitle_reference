@@ -94,9 +94,9 @@ function match_seek(struct)
 			struct.stage=1.5
 			break;
 			
-		
 		case 1.5:
 			struct.word_index++;
+			if struct.line>=array_length(source.lines) {struct.stage=4; break}
 			var line = source.lines[struct.line];
 			var s = array_length(line);
 			if struct.word_index>=s	// End of Line has no matching word, next line
@@ -121,7 +121,8 @@ function match_seek(struct)
 			struct.match = match;
 			struct.match_index = -1;
 			struct.stage = 1;
-			main.progress="Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)"
+			//main.progress="Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)"
+			main.show_progress("Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)", struct.line/struct.size)
 			break;
 			
 		case 1: // Seek matching lines
@@ -138,9 +139,9 @@ function match_seek(struct)
 		case 2:
 			var pos;
 			pos = source.word_get_line(struct.index1);
-			source.scroll = clamp(source.scroll, pos-24, pos-16);
+			source.scroll = clamp(source.scroll, pos-20, pos-10);
 			pos = reference.word_get_line(struct.index2);
-			reference.scroll = clamp(reference.scroll, pos-24, pos-16);
+			reference.scroll = clamp(reference.scroll, pos-20, pos-10);
 			main.translate.scroll = reference.scroll;
 			
 			if time_check(struct)
@@ -185,7 +186,7 @@ function match_seek(struct)
 			main.progress = -1;
 			log("[c_lime]Match completed[/]! "+string(ds_list_size(main.task))+" task added.")
 			log("Press [c_lime]Ctrl + S[/] to save generated subtitle.");
-			log("Press [c_lime]Ctrl + D[/] to save [b]lines failed to match only[/], useful for manual fixing.");
+			//log("Press [c_lime]Ctrl + D[/] to save [b]lines failed to match only[/], useful for manual fixing.");
 			return false;
 			break
 	}
@@ -267,6 +268,24 @@ function time_check(struct)
 {
 	var source = struct.source;
 	var reference = struct.reference;
+	
+	var line1 = source.word_get_line(struct.index0);
+	var line2 = reference.word_get_line(struct.matched[2]);
+	
+	var time1 = source.get_timestamp(line1, true);
+	var time2 = reference.get_timestamp(line2, true);
+	var offset = time2 - time1;
+	
+	var line = source.word_get_line(struct.index1);
+	var time1 = source.get_timestamp(line, true);
+	var time2 = source.get_timestamp(line, false);
+	
+	line = reference.word_get_line(struct.index2);
+	var time3 = reference.get_timestamp(line, true) - offset;
+	var time4 = reference.get_timestamp(line, false) - offset;
+	
+	if time4<time1-time_tolerance || time3>time2+time_tolerance return false;
+	/*
 	var line1 = source.word_get_line(struct.index0);
 	var line2 = source.word_get_line(struct.index1);
 	var time1 = source.get_timestamp(line1, true);
@@ -277,30 +296,28 @@ function time_check(struct)
 	var time3 = reference.get_timestamp(line1, true);
 	var time4 = reference.get_timestamp(line2, true);
 	
-	time4 -= time3-time1;
-	if time4>time2+time_tolerance return false;
+	if (time4-time3)>(time2-time1)+time_tolerance return false;
+	*/
 	return true;
 }
 function add_timestamp(source, reference, match)
 {
-	var time = array_create(6);
+	var time = array_create(7);
 	var line1 = source.word_get_line(match[0]);
 	var line2 = source.word_get_line(match[1]);
 	time[@1] = source.get_timestamp(line1, true);
 	time[@2] = source.get_timestamp(line2, false);
+	time[@5] = line1;
+	time[@6] = line2;
 	
 	line1 = reference.word_get_line(match[2]);
 	line2 = reference.word_get_line(match[3]);
 	time[@3] = reference.get_timestamp(line1, true);
 	time[@4] = reference.get_timestamp(line2, false);
 	
-	time[@0] = subtitle_task.offset;
-	time[@5] = undefined;
-	ds_list_add(main.task, time);
-}
-function get_time_start()
-{
 	
+	time[@0] = subtitle_task.offset;
+	ds_list_add(main.task, time);
 }
 
 function srt_generate_begin(source, translate)
@@ -313,6 +330,9 @@ function srt_generate_begin(source, translate)
 		var file = file_text_open_write(filename);
 	} else return undefined;
 	
+	var path = filename_path(filename);
+	if file_exists( path+"\\Debugging.txt") file_delete(path+"Debugging.txt");
+	var _debug = file_text_open_write(path+"Debugging.txt")
 	var struct = 
 	{
 		source: source,
@@ -321,21 +341,25 @@ function srt_generate_begin(source, translate)
 		filename: filename,
 		line: 1,
 		task: 0,
-		size: ds_list_size(main.task)
+		size: ds_list_size(main.task),
+		debug: _debug
 	}
 	return struct;
 }
 function srt_generate(struct)
 {
+	static _prev=""
 	if struct.task>=struct.size
 	{
 		if file_text_close(struct.file) {log("Saved to [c_yellow]"+string(struct.filename))} else {log("[c_red]Failed to write to "+string(struct.filename))}
+		if file_text_close(struct.debug) {log("Debug file saved to [c_yellow]Debugging.txt[/], read this file to check the lines failed to match.")} else {log("[c_red]Failed to write to Debugging.txt")}
 		main.generating=-1;
 		main.progress=-1;
 		return false;
 	}
 	
-	main.progress="Generating subtitle, task "+string(struct.task)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.task/struct.size*100))+"%)"
+	//main.progress="Generating subtitle, task "+string(struct.task)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.task/struct.size*100))+"%)"
+	main.show_progress("Generating subtitle, task "+string(struct.task)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.task/struct.size*100))+"%)", struct.task/struct.size)
 	var task = main.task[| struct.task];
 	struct.task++;
 	
@@ -345,6 +369,7 @@ function srt_generate(struct)
 	{
 		case subtitle_task.retain:
 			var line = task[1];
+			source.scroll = clamp(source.scroll, line-20, line-10);
 			var time1 = source.get_timestamp(line, true);
 			var time2 = source.get_timestamp(line, false);
 			
@@ -355,11 +380,19 @@ function srt_generate(struct)
 			file_text_write_string(struct.file, source.original[line]);
 			file_text_writeln(struct.file);
 			file_text_writeln(struct.file);
+			
+			file_text_write_string(struct.debug, struct.line);
+			file_text_writeln(struct.debug);
+			file_text_write_string(struct.debug, srt_time_stringify(time1)+" --> "+srt_time_stringify(time2))
+			file_text_writeln(struct.debug);
+			file_text_write_string(struct.debug, source.original[line]);
+			file_text_writeln(struct.debug);
+			file_text_writeln(struct.debug);
 			struct.line+=1;
 			break;
 			
 		case subtitle_task.offset:
-			if main.debugging=true break
+			//if main.debugging=true break
 			var line = -1;
 			
 			var t = infinity, _t;
@@ -374,27 +407,80 @@ function srt_generate(struct)
 			if line==-1 log("Can't find line for timestamp "+srt_time_stringify(task[3]))
 			//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
 			
-			var offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
+			//var offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
+			var offset = estimate_start_time(source, reference, task[5], task[6], line, task[3]+(task[2]-task[1]));
+			if is_undefined(offset) offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
 			for(var i=line; i<s; i++)
 			{
-				reference.scroll = clamp(reference.scroll, i-24, i-16);
+				reference.scroll = clamp(reference.scroll, i-20, i-10);
 				reference.visual_set_line(i, word_color.blue);
 				var _from = reference.get_timestamp(i, true)-offset;
 				var _to = reference.get_timestamp(i, false)-offset;
 				if _from>task[2]-time_tolerance break;
 				
-				file_text_write_string(struct.file, struct.line);
-				file_text_writeln(struct.file);
-				file_text_write_string(struct.file, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
-				file_text_writeln(struct.file);
-				file_text_write_string(struct.file, reference.original[i]);
-				file_text_writeln(struct.file);
-				file_text_writeln(struct.file);
-				struct.line++;
+				var str = reference.original[i];
+				if str!=_prev
+				{
+					file_text_write_string(struct.file, struct.line);
+					file_text_writeln(struct.file);
+					file_text_write_string(struct.file, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
+					file_text_writeln(struct.file);
+					file_text_write_string(struct.file, str);
+					file_text_writeln(struct.file);
+					file_text_writeln(struct.file);
+					struct.line++;
+				}
+				_prev = ""
 				
 				if _to>task[2]-time_tolerance break;
 			}
+			_prev = reference.original[min(i,s-1)];
 			break
 	}
 	return true;
+}
+function estimate_start_time(source, reference, linestart, lineend, lineref, timeend)
+{
+	if linestart==lineend return undefined;
+	// Get timestamp start
+	var time1 = [];
+	var time2 = [];
+	for(var i=linestart; i<lineend; i++) {array_push(time1, source.get_timestamp(i, true));}
+	var s = array_length(reference.lines);
+	for(var i=lineref; i<s; i++)
+	{
+		var _from = reference.get_timestamp(i, true);
+		var _to = reference.get_timestamp(i, false);
+		if _from>timeend-time_tolerance break;
+		array_push(time2, _from);
+		if _to>timeend-time_tolerance break;
+	}
+	
+	// Comparing matches
+	var _score = 0;
+	var _output = 0, priority = 0
+	var s1 = array_length(time1);
+	var s2 = array_length(time2);
+	for(var i=0; i<s1; i++)
+	for(var j=0; j<s2; j++)
+	{
+		var offset = time2[j]-time1[i]
+		_score=0;
+		for(var k=0; k<s1; k++)
+		for(var l=0; l<s2; l++)
+		{
+			var diff = abs((time2[l]-offset)-time1[k]);
+			diff = max(time_tolerance - diff, 0)/time_tolerance;
+			_score += diff;
+			//if abs((time2[l]-offset)-time1[k])<time_tolerance/2 {_score++}
+		}
+		
+		if (_score>match_minimum) && (_score>priority) {priority=_score; _output=offset}
+		if priority>=s1
+		{
+			return _output;
+		}
+	}
+	if _output==0 return undefined;
+	return _output;
 }
