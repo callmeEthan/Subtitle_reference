@@ -2,6 +2,7 @@
 #### Introduction
 Want to share a fan-edit media? but subtitle in your prefered language is not available? Dont have the patience to create and translate subtitle from scratch? This tool will help generate **most** of the subtitle in your language.
 > Made in gamemaker, just because
+
 > This is a proof of concept that I hastily put together in the span of 2 days, while the overal result are good, someone with better coding skill might be able to create something better (audio recognition, fuzzy string matching, AI,...) and yield better result.
 
 #### Requirement
