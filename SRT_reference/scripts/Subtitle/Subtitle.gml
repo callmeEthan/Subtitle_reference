@@ -1,15 +1,20 @@
-globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match;
+globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary;
 match_tolerance = 3;
 match_list = ds_priority_create();
-match_minimum = 4;	// If only match N words or less, then not considered as matched
+match_minimum = 5;	// If only match N words or less, then not considered as matched
 match_maximum = 10; // If match more than 10 word, then consider as matched and stop seeking
 time_tolerance = 1; 
 fuzzy_match = 0.8; // Acceptable letters mismatch (typo tolerance)
+dictionary = ds_list_create();
 
 function string_contraction(str)
 {
-	str = string_replace(str, "i am", "i'm");
-	str = string_replace(str, "it is", "it's");
+	var s = ds_list_size(dictionary);
+	for(var i=0; i<s; i++)
+	{
+		var entry = dictionary[| i];
+		str = string_replace(str, entry[0], entry[1]);	
+	}
 	return str;	
 }
 function srt_parse_time(text)
@@ -459,29 +464,33 @@ function estimate_start_time(source, reference, linestart, lineend, lineref, tim
 	
 	// Comparing matches
 	var _score = 0;
-	var _output = 0, priority = 0
+	var _output = 0, priority = 0, _test=0
 	var s1 = array_length(time1);
 	var s2 = array_length(time2);
+	if min(s1,s2)<3 return undefined;
 	//show_debug_message("Comparing "+string(s1)+" and "+string(s2)+" timestamps")
 	for(var i=0; i<s1; i++)
 	for(var j=0; j<s2; j++)
 	{
 		var offset = time2[j]-time1[i]
 		_score=0;
+		_test=0
 		for(var k=0; k<s1; k++)
 		for(var l=0; l<s2; l++)
 		{
+			if _test-_score<match_minimum break;
 			var diff = abs((time2[l]-offset)-time1[k]);
 			diff = max(time_tolerance - diff, 0)/time_tolerance;
 			_score += diff;
+			_test+=1
 			//if abs((time2[l]-offset)-time1[k])<time_tolerance/2 {_score++}
 		}
 		
-		if (_score>match_minimum) && (_score>priority) {priority=_score; _output=offset}
-		if priority>=match_maximum
+		if _score>min(s1, s2)*(0.5) && (_score>priority) {priority=_score; _output=offset}
+		/*if priority>=min(s1, s2)*0.85
 		{
 			return _output;
-		}
+		}*/
 	}
 	if _output==0 return undefined;
 	return _output;

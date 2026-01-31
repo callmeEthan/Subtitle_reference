@@ -115,6 +115,8 @@ show_progress = function(text, progress=-1)
 	progress_bar = progress;
 }
 
+load_config();
+load_dictionary();
 pending_reference = [-1,-1];
 debugging=false;
 log("Press [c_lime]<F1>[/] to add [c_yellow]Source[/] subtitle");

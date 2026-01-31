@@ -160,3 +160,70 @@ function generate_nfo(file, episode, output)
 </episodedetails>
 */
 }
+
+globalvar match_speed, import_speed;
+match_speed = 100;
+import_speed = 100;
+
+function save_config(filename = "\\Config.ini")
+{
+	var path = working_directory
+	filename = path+filename
+	ini_open(filename)
+	ini_write_real("Setting", "match_tolerance", match_tolerance)
+	ini_write_real("Setting", "match_minimum", match_minimum)
+	ini_write_real("Setting", "match_maximum", match_maximum)
+	ini_write_real("Setting", "time_tolerance", time_tolerance)
+	ini_write_real("Setting", "fuzzy_match", fuzzy_match)
+	ini_write_real("Performance", "match_speed", match_speed)
+	ini_write_real("Performance", "import_speed", import_speed)
+	ini_close()
+}
+function load_config(filename = "\\Config.ini")
+{
+	var path = working_directory
+	filename = path+filename
+	if !file_exists(filename) {log("[c_red]Failed to load setting[/], file not found ("+string(filename)+")"); return}
+	ini_open(filename)
+	match_tolerance = ini_read_real("Setting", "match_tolerance", match_tolerance)
+	match_minimum = ini_read_real("Setting", "match_minimum", match_minimum)
+	match_maximum = ini_read_real("Setting", "match_maximum", match_maximum)
+	time_tolerance = ini_read_real("Setting", "time_tolerance", time_tolerance)
+	fuzzy_match = ini_read_real("Setting", "fuzzy_match", fuzzy_match)
+	match_speed = ini_read_real("Performance", "match_speed", match_speed)
+	import_speed = ini_read_real("Performance", "import_speed", import_speed)
+	ini_close()
+	log("[c_lime]Config file loaded![/]")
+}
+function show_config()
+{
+	log("[c_yellow]Current setting:")
+	log("match_tolerance: "+string(match_tolerance))
+	log("match_minimum: "+string(match_minimum))
+	log("match_maximum: "+string(match_maximum))
+	log("time_tolerance: "+string(time_tolerance))
+	log("fuzzy_match: "+string(fuzzy_match))
+	log("match_speed: "+string(match_speed))
+	log("import_speed: "+string(import_speed))
+}
+
+function load_dictionary(filename = "\\Dictionary.txt")
+{
+	var path = working_directory
+	filename = path+filename
+	if !file_exists(filename) {log("[c_red]Failed to load dictionary[/], file not found ("+string(filename)+")"); return}
+	
+	var file = file_text_open_read(filename);
+	while(!file_text_eof(file))
+	{
+		var text = file_text_read_string(file);
+		if string_pos(":", text)==0 {file_text_readln(file);	continue}
+		
+		var words = string_split(text, ":");
+		var entry = [string_replace_all(words[0], "\"", ""), string_replace_all(words[1], "\"", "")]
+		ds_list_add(dictionary, entry)
+		file_text_readln(file)
+	}
+	file_text_close(file);
+	log("Dictionary added, "+string(ds_list_size(dictionary))+" words found");
+}

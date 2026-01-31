@@ -1,6 +1,6 @@
 /// @description Import srt subtitle
 pending = -1;
-repeat(100)
+repeat(import_speed)
 {
 	var text = file_text_read_string(file);
 
