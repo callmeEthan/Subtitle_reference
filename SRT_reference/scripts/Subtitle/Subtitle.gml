@@ -97,7 +97,7 @@ function match_seek(struct)
 	{
 		case 0:
 			struct.word_index=0;
-			struct.stage=1.5
+			struct.stage=1.5;
 			break;
 			
 		case 1.5:
@@ -127,6 +127,7 @@ function match_seek(struct)
 			struct.match = match;
 			struct.match_index = -1;
 			struct.stage = 1;
+			struct.offset=undefined;
 			//main.progress="Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)"
 			main.show_progress("Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)", struct.line/struct.size)
 			break;
@@ -136,7 +137,7 @@ function match_seek(struct)
 			if (struct.match_index>=array_length(struct.match)) {struct.stage=3; break}
 			struct.index1 = struct.index0;
 			struct.index2 = struct.match[struct.match_index];
-			struct.matched = [struct.index0, struct.index0, struct.index2, struct.index2];
+			struct.matched = [struct.index0, struct.index0, struct.index2, struct.index2, undefined];
 			struct.stage = 2;
 			struct.tolerance = 0; struct.unmatch=0;
 			_match = 0;
@@ -150,7 +151,7 @@ function match_seek(struct)
 			reference.scroll = clamp(reference.scroll, pos-20, pos-10);
 			main.translate.scroll = reference.scroll;
 			
-			if time_check(struct)
+			if time_check(struct) and timestamp_check(struct)
 			{
 				if word_matching(struct)==true {struct.tolerance=max(struct.tolerance-1, 0); _match++; break}
 				if struct.tolerance<1 {struct.tolerance+=1; struct.index1++; struct.index2++; break}
@@ -175,7 +176,8 @@ function match_seek(struct)
 				ds_priority_clear(match_list);
 				check_min_word(struct, temp)
 			
-				source.visual_set_word(temp[0], word_color.blue, temp[1]-temp[0]+1);
+				if is_undefined(temp[4]) source.visual_set_word(temp[0], word_color.purple, temp[1]-temp[0]+1);
+				else source.visual_set_word(temp[0], word_color.blue, temp[1]-temp[0]+1);
 				add_timestamp(source, reference, temp);
 				reference.visual_reset();
 			
@@ -200,16 +202,17 @@ function match_seek(struct)
 }
 function check_min_word(struct)
 {
+	// When only match a minimum number of word, then dont match this line
 	var source = struct.source;
 	var reference = struct.reference;
 	
-	var index = struct.matched[3];
-	var line = reference.word_get_line(index);
-	var array = reference.lines[line]
-	var ind = array[0];
+	var index = struct.matched[1];
+	var line = source.word_get_line(index);
+	var array = source.lines[line]
 	
 	if array_length(array)-1>match_tolerance
 	{
+		var ind = array[0];
 		if index-ind<ceil(match_tolerance)
 		{
 			struct.matched[1]-=match_tolerance;
@@ -272,6 +275,7 @@ function word_matching(struct)
 }
 function time_check(struct)
 {
+	// Check if timestamp difference too much
 	var source = struct.source;
 	var reference = struct.reference;
 	
@@ -291,30 +295,63 @@ function time_check(struct)
 	var time4 = reference.get_timestamp(line, false) - offset;
 	
 	if time4<time1-time_tolerance || time3>time2+time_tolerance return false;
-	/*
-	var line1 = source.word_get_line(struct.index0);
-	var line2 = source.word_get_line(struct.index1);
+	return true;
+}
+function check_is_begin(struct)
+{
+	// Check if seeking is at beginning of line, (first or second word)
+	var source = struct.source;
+	var reference = struct.reference;
+	var line1 = source.word_get_line(struct.matched[1]);
+	var line2 = reference.word_get_line(struct.matched[3]);
+	
+	var array1 = source.lines[line1];
+	if struct.matched[1]-array1[0]>1 return false;
+	
+	var array2 = reference.lines[line2];
+	if struct.matched[3]-array2[0]>1 return false;
+	return true
+	
+}
+function timestamp_check(struct)
+{
+	// Check if timestamp should match;
+	static tolerance = 0;
+	var source = struct.source;
+	var reference = struct.reference;
+	
+	if is_undefined(struct.offset)
+	{
+		if !check_is_begin(struct) return true;
+		var line1 = source.word_get_line(struct.matched[1]);
+		var line2 = reference.word_get_line(struct.matched[3]);
+		var time1 = source.get_timestamp(line1, true);
+		var time2 = reference.get_timestamp(line2, true);
+		struct.offset = time2-time1;
+		struct.matched[@4]=struct.offset;
+		tolerance = 0;
+		return true;
+	}
+	if !check_is_begin(struct) return true;
+	var line1 = source.word_get_line(struct.matched[1]);
+	var line2 = reference.word_get_line(struct.matched[3]);
 	var time1 = source.get_timestamp(line1, true);
-	var time2 = source.get_timestamp(line2, false);
-	
-	line1 = reference.word_get_line(struct.matched[2]);
-	line2 = reference.word_get_line(struct.index2);
-	var time3 = reference.get_timestamp(line1, true);
-	var time4 = reference.get_timestamp(line2, true);
-	
-	if (time4-time3)>(time2-time1)+time_tolerance return false;
-	*/
+	var time2 = reference.get_timestamp(line2, true);
+	var _o = time2-time1;
+	tolerance+=_o-struct.offset;
+	if tolerance>time_tolerance/2 return false;
 	return true;
 }
 function add_timestamp(source, reference, match)
 {
-	var time = array_create(7);
+	var time = array_create(8);
 	var line1 = source.word_get_line(match[0]);
 	var line2 = source.word_get_line(match[1]);
 	time[@1] = source.get_timestamp(line1, true);
 	time[@2] = source.get_timestamp(line2, false);
 	time[@5] = line1;
 	time[@6] = line2;
+	time[@7] = match[4]
 	
 	line1 = reference.word_get_line(match[2]);
 	line2 = reference.word_get_line(match[3]);
@@ -414,7 +451,9 @@ function srt_generate(struct)
 			//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
 			
 			//var offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
-			var offset = estimate_start_time(source, reference, task[5], task[6], line, task[3]+(task[2]-task[1]));
+			var offset;
+			offset = task[7];
+			if is_undefined(offset) offset = estimate_start_time(source, reference, task[5], task[6], line, task[3]+(task[2]-task[1]));
 			if is_undefined(offset) offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
 			for(var i=line; i<s; i++)
 			{

@@ -137,6 +137,11 @@ display_array = function()
 					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
 					draw_set_color(c_white)
 					break
+				case 6:
+					draw_set_color(c_purple)
+					draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+					draw_set_color(c_white)
+					break
 			}
 			draw_text_transformed(_x, _h*_y, l[j], fontsize, fontsize, 0);
 			
@@ -213,6 +218,11 @@ display_original = function()
 				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
 				draw_set_color(c_white)
 				break
+			case 6:
+				draw_set_color(c_purple)
+				draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);
+				draw_set_color(c_white)
+				break
 		}
 		draw_text_transformed(_x, _h*_y, str, fontsize, fontsize, 0);
 		_y++;
@@ -228,7 +238,8 @@ enum word_color
 	orange,
 	blue,
 	red,
-	green
+	green,
+	purple
 }
 visual_set_word = function(index, value, number=1)
 {
