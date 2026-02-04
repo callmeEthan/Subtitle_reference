@@ -1,10 +1,13 @@
 # Subtitle cross-reference tool
+> This tool is not for creators, only average viewers, who often only have access to english subtitle.  
+If you have access to edit timeline, it is better to use something like Subtitle Remapper.
+
 ![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true)
 ### Introduction
 Want to share a fan-edit media? but subtitle in your prefered language is not available? Dont have the patience to create and translate subtitle from scratch? This tool will help generate **most** of the subtitle in your language.
-> Made in gamemaker, just because
 
-> This is a proof of concept that I hastily put together in the span of 2 days, while the overal result are good, someone with better coding skill might be able to create something better (audio recognition, fuzzy string matching, AI,...) and yield better result.
+> This is a proof of concept that I hastily put together in the span of 2 days, while the overal result are good, someone with better coding skill might be able to create something better (audio recognition, fuzzy string matching, AI,...) and yield better result.  
+Made in gamemaker, just because-
 
 ### Requirement
 - Compiled for windows.
@@ -16,10 +19,10 @@ Want to share a fan-edit media? but subtitle in your prefered language is not av
 ### How it works?
 This tool break all subtitle lines down to arrays of words, then compare each word to find matching lines.  
 Estimate the editted timestamp offset, then pull lines from translated subtitle to create new subtitle.
-> This tool pull line from translated subtitle, it does not perform any translation, any new line not available in original media (restored deleted scene) will not be translated and will retain from source subtitle.
+> This tool pull lines from the translated subtitle, it does not perform any translation, any new line not available in original media (restored deleted scene) will not be translated and retained from source subtitle.
 
 ### Usage
-![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true)
+![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/preview.jpg?raw=true)
 Download the latest release, extract and open exe file.
 Press (+) to add subtitle files.
 - Only 1 **Source** subtitle file are accepted, adding another will replace current data.
