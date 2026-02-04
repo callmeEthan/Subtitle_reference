@@ -5,7 +5,8 @@ draw_set_halign(fa_center)
 if source==-1
 {
 	if render_button(width*0.16, height*0.4, _radius, 0, 0.3) && mouse_check_button_pressed(mb_left) add_source()
-	draw_text_transformed(width*0.16, height*0.4+_radius, "Add source\n(Subtitle provided by the author)", 1, 1, 0)
+	draw_text_transformed(width*0.16, height*0.4+_radius/2, "Source", 2, 2, 0)
+	draw_text_transformed(width*0.16, height*0.4+_radius, "(Subtitle provided by the author)", 1, 1, 0)
 } else {
 	if render_button(width*0.16, height*0.4, _radius, 0, 0.) && mouse_check_button_pressed(mb_left) add_source()
 }
@@ -13,7 +14,8 @@ if source==-1
 if reference==-1
 {
 	if render_button(width/2, height*0.4, _radius, 0, 0.3) && mouse_check_button_pressed(mb_left) add_reference()
-	draw_text_transformed(width/2, height*0.4+_radius, "Add reference\n(Subtitle for the original media\nin the same language)", 1, 1, 0)
+	draw_text_transformed(width/2, height*0.4+_radius/2, "Reference", 2, 2, 0)
+	draw_text_transformed(width/2, height*0.4+_radius, "(Subtitle for the original media\nin the same language)", 1, 1, 0)
 } else {
 	if render_button(width/2, height*0.4, _radius, 0, 0.1) && mouse_check_button_pressed(mb_left) add_reference()
 }
@@ -21,7 +23,8 @@ if reference==-1
 if translate==-1
 {
 	if render_button(width*0.84, height*0.4, _radius, 0, 0.3) && mouse_check_button_pressed(mb_left) add_translate()
-	draw_text_transformed(width*0.84, height*0.4+_radius, "Add translated\n(Subtitle for the original media\nIn the desired language\nSync to reference subtitle)", 1, 1, 0)
+	draw_text_transformed(width*0.84, height*0.4+_radius/2, "Translated", 2, 2, 0)
+	draw_text_transformed(width*0.84, height*0.4+_radius, "(Subtitle for the original media\nIn the desired language\nSync to reference subtitle)", 1, 1, 0)
 } else {
 	if render_button(width*0.84, height*0.4, _radius, 0, 0.1) && mouse_check_button_pressed(mb_left) add_translate()
 }
