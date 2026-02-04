@@ -19,6 +19,7 @@ Estimate the editted timestamp offset, then pull lines from translated subtitle 
 > This tool pull line from translated subtitle, it does not perform any translation, any new line not available in original media (restored deleted scene) will not be translated and will retain from source subtitle.
 
 ### Usage
+![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true)
 Download the latest release, extract and open exe file.
 Press (+) to add subtitle files.
 - Only 1 **Source** subtitle file are accepted, adding another will replace current data.
