@@ -1,4 +1,5 @@
 # Subtitle cross-reference tool
+![alt text]([http://url/to/img.png](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true))
 ### Introduction
 Want to share a fan-edit media? but subtitle in your prefered language is not available? Dont have the patience to create and translate subtitle from scratch? This tool will help generate **most** of the subtitle in your language.
 > Made in gamemaker, just because
