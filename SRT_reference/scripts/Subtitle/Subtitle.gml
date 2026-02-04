@@ -107,7 +107,9 @@ function match_seek(struct)
 			var s = array_length(line);
 			if struct.word_index>=s	// End of Line has no matching word, next line
 			{
-				ds_list_add(main.task, [subtitle_task.retain, struct.line]);
+				var time1 = source.get_timestamp(struct.line, true);
+				var time2 = source.get_timestamp(struct.line, false);
+				ds_list_add(main.task, [subtitle_task.retain, struct.line, time1, time2]);
 				source.visual_set_line(struct.line, word_color.red);
 				struct.line+=1;
 				struct.stage=0;
@@ -411,6 +413,57 @@ function srt_generate(struct)
 	switch(task[0])
 	{
 		case subtitle_task.retain:
+		/*
+			var time1 = task[2], time2;
+			while(task[0]==subtitle_task.retain)
+			{
+				time2 = task[3];
+				task = main.task[| struct.task];
+				struct.task++;
+				if struct.task>=struct.size break
+			}
+			var line = -1;
+			
+			var t = infinity, _t;
+			var s = array_length(source.lines);
+			buffer_seek(source.timestamp_seek, buffer_seek_start, 0);
+			for(var i=0; i<s; i++)
+			{
+				var time = buffer_read(source.timestamp_seek, buffer_f32);
+				if ((time1+time_tolerance)-time)<0 break;
+				if ((time1+time_tolerance)-time)<t {t=(time1+time_tolerance)-time; line=i; _t = time;}
+			}
+			if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(task[3]));break}
+			var count=0
+			for(var i=line; i<s; i++)
+			{
+				source.scroll = clamp(source.scroll, i-20, i-10);
+				source.visual_set_line(i, word_color.blue);
+				var _from = source.get_timestamp(i, true);
+				var _to = source.get_timestamp(i, false);
+				if _from>time2-time_tolerance/2 break;
+				
+				var str = source.original[i];
+				file_text_write_string(struct.file, struct.line);
+				file_text_writeln(struct.file);
+				file_text_write_string(struct.file, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
+				file_text_writeln(struct.file);
+				file_text_write_string(struct.file, str);
+				file_text_writeln(struct.file);
+				file_text_writeln(struct.file);
+				
+				file_text_write_string(struct.debug, struct.line);
+				file_text_writeln(struct.debug);
+				file_text_write_string(struct.debug, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
+				file_text_writeln(struct.debug);
+				file_text_write_string(struct.debug, source.original[line]);
+				file_text_writeln(struct.debug);
+				file_text_writeln(struct.debug);
+				struct.line++;
+				if _to>time2+time_tolerance/2 break;
+			}
+			*/
+			
 			var line = task[1];
 			source.scroll = clamp(source.scroll, line-20, line-10);
 			var time1 = source.get_timestamp(line, true);
@@ -435,7 +488,6 @@ function srt_generate(struct)
 			break;
 			
 		case subtitle_task.offset:
-			//if main.debugging=true break
 			var line = -1;
 			
 			var t = infinity, _t;
@@ -447,10 +499,8 @@ function srt_generate(struct)
 				if ((task[3]+time_tolerance)-time)<0 break;
 				if ((task[3]+time_tolerance)-time)<t {t=(task[3]+time_tolerance)-time; line=i; _t = time;}
 			}
-			if line==-1 log("Can't find line for timestamp "+srt_time_stringify(task[3]))
-			//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
+			if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(task[3]));break}
 			
-			//var offset = (task[3]+task[4])/2-(task[1]+task[2])/2;
 			var offset;
 			offset = task[7];
 			if is_undefined(offset) offset = estimate_start_time(source, reference, task[5], task[6], line, task[3]+(task[2]-task[1]));
@@ -477,7 +527,7 @@ function srt_generate(struct)
 				}
 				_prev = ""
 				
-				if _to>task[2]-time_tolerance break;
+				if _to>task[2]+time_tolerance break;
 			}
 			_prev = reference.original[min(i,s-1)];
 			break
