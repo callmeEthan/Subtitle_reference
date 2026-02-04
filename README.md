@@ -39,5 +39,4 @@ Some factor to consider:
 - Line is unavailable in the original media (deleted scenes).
 - Micro cuts, multiple lines are stiched together instead of a whole part.
 - ...
-
-**The final human touch will always be required for a perfect subitle.**
+### The final human touch will always be required for a perfect subitle.
