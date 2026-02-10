@@ -14,6 +14,7 @@ string_process = function(str)
 	// Add empty value to visualizer buffer
 	// Add line position to word_reference
 	
+	if remove_colon==true str=string_remove_colon(str);
 	str = string_clear_format(string_lower(str));
 	str = string_contraction(str)
 	str = string_trim(str);
@@ -54,6 +55,7 @@ get_word = function(index)
 	var line = lines[_l];
 	var _i = line[0];
 	if (index-_i+1)>=array_length(line) return undefined;
+	if (index-_i+1)<0 return undefined;
 	return line[index-_i+1];
 }
 word_get_line = function(index)

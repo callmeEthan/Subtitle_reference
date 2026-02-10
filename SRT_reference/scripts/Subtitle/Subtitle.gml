@@ -1,4 +1,5 @@
-globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary;
+globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary, remove_colon;
+remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
 match_tolerance = 3;
 match_list = ds_priority_create();
 match_minimum = 5;	// If only match N words or less, then not considered as matched
@@ -70,6 +71,12 @@ function string_clear_format(str)
 	str = delim(str, "<", ">")
 	str = delim(str, "(", ")")
 	str = delim(str, "[", "]")
+	return str
+}
+function string_remove_colon(str)
+{
+	var pos = string_pos(":", str);
+	if pos>0 str = string_copy(str, pos+1, string_length(str)-pos)
 	return str
 }
 
@@ -307,9 +314,11 @@ function check_is_begin(struct)
 	var line1 = source.word_get_line(struct.matched[1]);
 	var line2 = reference.word_get_line(struct.matched[3]);
 	
+	if line1 > array_length(source.lines) return false;
 	var array1 = source.lines[line1];
 	if struct.matched[1]-array1[0]>1 return false;
 	
+	if line2 > array_length(reference.lines) return false;
 	var array2 = reference.lines[line2];
 	if struct.matched[3]-array2[0]>1 return false;
 	return true
@@ -492,14 +501,15 @@ function srt_generate(struct)
 			
 			var t = infinity, _t;
 			var s = array_length(reference.lines);
-			buffer_seek(reference.timestamp_seek, buffer_seek_start, 0);
+			//buffer_seek(reference.timestamp_seek, buffer_seek_start, 0);
 			for(var i=0; i<s; i++)
 			{
-				var time = buffer_read(reference.timestamp_seek, buffer_f32);
+				//var time = buffer_read(reference.timestamp_seek, buffer_f32);
+				var time = reference.get_timestamp(i, false);
 				if ((task[3]+time_tolerance)-time)<0 break;
-				if ((task[3]+time_tolerance)-time)<t {t=(task[3]+time_tolerance)-time; line=i; _t = time;}
+				if ((task[3]+time_tolerance)-time)<t {t=(task[3]+time_tolerance)-time; line=i+1; _t = time;}
 			}
-			if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(task[3]));break}
+			if line==-1 || line>=s {log("Can't find line for timestamp "+srt_time_stringify(task[3]));break}
 			
 			var offset;
 			offset = task[7];
