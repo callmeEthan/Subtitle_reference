@@ -34,6 +34,7 @@ repeat(import_speed)
 				buffer_write(timestamp, buffer_f32, time_to);
 				buffer_write(timestamp_seek, buffer_f32, time_from);
 				duration = max(duration, time_to, time_from);
+				size++
 				break;
 			}
 			if str="" str=text else str=str+"\n"+text;

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"Metaphone",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"Metaphone",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

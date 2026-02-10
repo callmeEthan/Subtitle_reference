@@ -17,7 +17,8 @@ function string_compare(string1, string2, ngram=3)
 	}
 	
 	var _score=0;
-	var _max=max(string_length(string1), string_length(string2))-ngram;
+	//var _max=max(string_length(string1), string_length(string2))-ngram;
+	var _max = string_length(string1);
 	var s = string_length(string1)-ngram;
 	for(var i=1; i<=s+1; i++)
 	{

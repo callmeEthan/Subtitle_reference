@@ -78,6 +78,7 @@
     {"name":"__scribble_tick","order":21,"path":"scripts/__scribble_tick/__scribble_tick.yy",},
     {"name":"App","order":1,"path":"scripts/App/App.yy",},
     {"name":"draw_text_scribble_ext","order":1,"path":"scripts/draw_text_scribble_ext/draw_text_scribble_ext.yy",},
+    {"name":"Metaphone","order":3,"path":"scripts/Metaphone/Metaphone.yy",},
     {"name":"scribble_anim_cycle","order":1,"path":"scripts/scribble_anim_cycle/scribble_anim_cycle.yy",},
     {"name":"scribble_anim_disabled","order":2,"path":"scripts/scribble_anim_disabled/scribble_anim_disabled.yy",},
     {"name":"scribble_anim_get_disabled","order":3,"path":"scripts/scribble_anim_get_disabled/scribble_anim_get_disabled.yy",},

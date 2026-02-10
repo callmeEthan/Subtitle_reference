@@ -170,6 +170,7 @@ function save_config(filename = "\\Config.ini")
 	var path = working_directory
 	filename = path+filename
 	ini_open(filename)
+	ini_write_real("Setting", "remove_colon", remove_colon)
 	ini_write_real("Setting", "match_tolerance", match_tolerance)
 	ini_write_real("Setting", "match_minimum", match_minimum)
 	ini_write_real("Setting", "match_maximum", match_maximum)
@@ -185,6 +186,7 @@ function load_config(filename = "\\Config.ini")
 	filename = path+filename
 	if !file_exists(filename) {log("[c_red]Failed to load setting[/], file not found ("+string(filename)+")"); return}
 	ini_open(filename)
+	remove_colon=ini_read_real("Setting", "remove_colon", remove_colon)
 	match_tolerance = ini_read_real("Setting", "match_tolerance", match_tolerance)
 	match_minimum = ini_read_real("Setting", "match_minimum", match_minimum)
 	match_maximum = ini_read_real("Setting", "match_maximum", match_maximum)

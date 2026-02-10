@@ -1,10 +1,11 @@
-globalvar match_tolerance, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary;
-match_tolerance = 3;
+globalvar match_length, match_list,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary, remove_colon;
+remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
+match_length = 10;
 match_list = ds_priority_create();
-match_minimum = 5;	// If only match N words or less, then not considered as matched
-match_maximum = 10; // If match more than 10 word, then consider as matched and stop seeking
+match_minimum = 2;
+match_maximum = 7;
 time_tolerance = 1; 
-fuzzy_match = 0.8; // Acceptable letters mismatch (typo tolerance)
+fuzzy_match = 0.5;
 dictionary = ds_list_create();
 
 function string_contraction(str)
@@ -72,6 +73,12 @@ function string_clear_format(str)
 	str = delim(str, "[", "]")
 	return str
 }
+function string_remove_colon(str)
+{
+	var pos = string_pos(":", str);
+	if pos>0 str = string_copy(str, pos+1, string_length(str)-pos)
+	return str
+}
 
 function matching_begin(source, reference)
 {
@@ -84,283 +91,138 @@ function matching_begin(source, reference)
 		line: 0,
 		stage: 0,
 		size: array_length(source.lines),
+		index1: 0,
+		index2: 0,
 	}
 	return struct;
 }
 function match_seek(struct)
 {
-	static _match = 0;
 	var source = struct.source;
 	var reference = struct.reference;
 		
 	switch(struct.stage)
 	{
-		case 0:
-			struct.word_index=0;
-			struct.stage=1.5;
-			break;
+		case 0:			
+			struct.stage = 1;
+			struct.match = 0;
+			struct.evaluate = 0;	struct.highest=0; struct.highest_match=0
+			struct.index2=0;
+			struct.size1=0;	struct.size2=0;
+			//reference.visual_reset();
 			
-		case 1.5:
-			struct.word_index++;
-			if struct.line>=array_length(source.lines) {struct.stage=4; break}
-			var line = source.lines[struct.line];
-			var s = array_length(line);
-			if struct.word_index>=s	// End of Line has no matching word, next line
+		case 1:
+			struct.seek1 = struct.index1;
+			struct.seek2 = struct.index2;
+			struct.line1 = "";	struct.length1=0
+			struct.stage=2
+			break
+			
+		case 2:	// first fuzzy match
+			struct.line1 = source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_blue);source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
+			struct.length1 = string_length(struct.line1);
+			while(struct.length1<match_length)
 			{
-				ds_list_add(main.task, [subtitle_task.retain, struct.line]);
-				source.visual_set_line(struct.line, word_color.red);
-				struct.line+=1;
-				struct.stage=0;
-				break
+				struct.seek1++
+				struct.line1 += source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_blue);source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
+				struct.length1 = string_length(struct.line1);
 			}
-			var word = line[struct.word_index];
 			
-			var match = reference.words[? word];
-			if is_undefined(match)
+			struct.line2 = "";
+			for(var i=struct.seek2; i<reference.size; i++)
 			{
-				source.visual_set_word(line[0]+struct.word_index-1, word_color.red);
+				struct.line2 += reference.get_line(i);
+				if string_length(struct.line2)>=struct.length1 {break}
+			}
+			struct.seek2=i;
+			var _match = string_compare(struct.line1, struct.line2);
+			
+			if _match<fuzzy_match 
+			{
+				struct.stage = 4;
 				break;
 			}
-			
-			struct.index0 = line[0]+struct.word_index-1;
-			struct.word = word;
-			struct.match = match;
-			struct.match_index = -1;
-			struct.stage = 1;
-			struct.offset=undefined;
-			//main.progress="Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)"
-			main.show_progress("Matching line "+string(struct.line)+" of "+string(struct.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)", struct.line/struct.size)
+			reference.visual_set_line(struct.seek2, merge_colour(c_red, c_blue, _match));
+			reference.scroll = clamp(reference.scroll, struct.seek2-20, struct.seek2-10);
+			struct.match = [struct.index1, struct.index2, struct.seek1, struct.seek2]
+			struct.evaluate=_match;
+			struct.stage=3;
+			main.show_progress("Matching line "+string(struct.index1)+" of "+string(source.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)[/], referencing "+string(round(struct.index2/reference.size*100))+"%")
 			break;
 			
-		case 1: // Seek matching lines
-			struct.match_index += 1;
-			if (struct.match_index>=array_length(struct.match)) {struct.stage=3; break}
-			struct.index1 = struct.index0;
-			struct.index2 = struct.match[struct.match_index];
-			struct.matched = [struct.index0, struct.index0, struct.index2, struct.index2, undefined];
-			struct.stage = 2;
-			struct.tolerance = 0; struct.unmatch=0;
-			_match = 0;
-			break
-			
-		case 2:
-			var pos;
-			pos = source.word_get_line(struct.index1);
-			source.scroll = clamp(source.scroll, pos-20, pos-10);
-			pos = reference.word_get_line(struct.index2);
-			reference.scroll = clamp(reference.scroll, pos-20, pos-10);
-			main.translate.scroll = reference.scroll;
-			
-			if time_check(struct) and timestamp_check(struct)
+		case 3: // match subsequence lines
+			struct.size1 = string_length(struct.line1);
+			struct.size2 = string_length(struct.line2);
+			struct.seek1++;
+			struct.line1 += source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_green); source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
+			struct.length1 = string_length(struct.line1);
+			for(var i=struct.seek2; i<reference.size; i++)
 			{
-				if word_matching(struct)==true {struct.tolerance=max(struct.tolerance-1, 0); _match++; break}
-				if struct.tolerance<1 {struct.tolerance+=1; struct.index1++; struct.index2++; break}
+				struct.line2 += reference.get_line(i);
+				if string_length(struct.line2)>=struct.length1 {break}
 			}
-			source.visual_set_word(struct.index0, word_color.green, struct.index1-struct.index0)
-			struct.stage=1;
-			
-			if _match>=match_minimum
+			struct.seek2=i;
+			var pos = min(struct.size1, struct.size2);
+			var str1 = string_copy(struct.line1, pos+1, string_length(struct.line1)-pos);
+			var str2 = string_copy(struct.line2, pos+1, string_length(struct.line2)-pos);
+			//log("additional compare "+string(struct.line1)+"="+string(struct.line2)+" pos: "+string(pos)+" ("+str1+"="+str2+")")
+			var _match = string_compare(str1, str2);
+			if _match<fuzzy_match 
 			{
-				check_min_word(struct);
-				ds_priority_add(match_list, variable_clone(struct.matched), struct.matched[1]-struct.matched[0])
+				struct.stage = 4;
+				break;
 			}
-			if _match>match_maximum {stage=3}	// reach max, skip seeking and evaluate
-			break
-		
-		case 3:	// evaluation
-			if ds_priority_size(match_list)==0
+			reference.visual_set_line(struct.seek2, merge_colour(c_red, c_lime, _match));
+			reference.scroll = clamp(reference.scroll, struct.seek2-20, struct.seek2-10);
+			struct.match[@2] = struct.seek1;
+			struct.match[@3] = struct.seek2;
+			struct.evaluate += _match;
+			break;
+			
+		case 4: // evaluate
+			if true //struct.evaluate>match_minimum
 			{
-				struct.stage = 1.5;
+				if struct.evaluate>struct.highest
+				{
+					struct.highest=struct.evaluate;
+					struct.highest_match=struct.match;
+				}
+			}
+			if struct.evaluate>match_maximum {struct.stage=5; break}	// high score, finish matching
+			if struct.index2>=reference.size {struct.stage=5; break}	// end of reference, go to next line
+			struct.index2+=1;
+			struct.stage=1;	// seek again, reference different line
+			break
+		case 5:	// finish match line
+			log("Line "+string(struct.index1)+" Finish matching, score="+string(struct.highest))
+			if struct.highest_match==0
+			{
+				source.visual_set_line(struct.index1, c_red);
+				struct.index1++;
 			} else {
-				var temp = ds_priority_find_max(match_list);
-				ds_priority_clear(match_list);
-				check_min_word(struct, temp)
-			
-				if is_undefined(temp[4]) source.visual_set_word(temp[0], word_color.purple, temp[1]-temp[0]+1);
-				else source.visual_set_word(temp[0], word_color.blue, temp[1]-temp[0]+1);
-				add_timestamp(source, reference, temp);
-				reference.visual_reset();
-			
-				pos = source.word_get_line(temp[1])
-				struct.line = pos+1;
-				struct.stage = 0;
+				for(var i=struct.index1; i<=struct.highest_match[2]; i++)
+				{
+					source.visual_set_line(i, c_black)
+				}
+				struct.index1 = struct.highest_match[2]+1;
+				var _match = string(struct.highest_match);
 			}
-		
-			if struct.line<array_length(source.lines) break;
-			struct.stage=4
+			struct.stage=0
 			break
 			
-		case 4: // end
+		case 6: // end
 			main.progress = -1;
 			log("[c_lime]Match completed[/]! "+string(ds_list_size(main.task))+" task added.")
 			log("Press [c_lime]Ctrl + S[/] to save generated subtitle.");
-			//log("Press [c_lime]Ctrl + D[/] to save [b]lines failed to match only[/], useful for manual fixing.");
 			return false;
 			break
 	}
 	return true
 }
-function check_min_word(struct)
+
+function add_timeline(struct)
 {
-	// When only match a minimum number of word, then dont match this line
-	var source = struct.source;
-	var reference = struct.reference;
-	
-	var index = struct.matched[1];
-	var line = source.word_get_line(index);
-	var array = source.lines[line]
-	
-	if array_length(array)-1>match_tolerance
-	{
-		var ind = array[0];
-		if index-ind<ceil(match_tolerance)
-		{
-			struct.matched[1]-=match_tolerance;
-			struct.matched[3]-=match_tolerance;
-		}
-	}
-	return true;
-}
-function word_matching(struct)
-{
-	var source = struct.source;
-	var reference = struct.reference;
-	
-	var word1 = source.get_word(struct.index1);
-	var word2 = reference.get_word(struct.index2);
-	
-	if string_compare(word1, word2)>fuzzy_match //word1 = word2
-	{
-		struct.matched[@1] = struct.index1;
-		struct.matched[@3] = struct.index2;
-		source.visual_set_word(struct.index1, word_color.lime);
-		reference.visual_set_word(struct.index2, word_color.lime);
-		struct.index1++;
-		struct.index2++;
-		return true;
-	}
-	
-	for(var i=1; i<=match_tolerance; i++)
-	{
-		var _w = reference.get_word(struct.index2+i);
-		if string_compare(word1, _w )>fuzzy_match
-		{
-			struct.index2 += i;
-			struct.matched[@1] = struct.index1
-			struct.matched[@3] = struct.index2;
-			source.visual_set_word(struct.index1, word_color.lime);
-			reference.visual_set_word(struct.index2, word_color.lime);
-			struct.index1++;
-			struct.index2++;
-			return true;
-		}
-	}
-	
-	for(var i=1; i<=match_tolerance; i++)
-	{
-		var _w = source.get_word(struct.index1+i);
-		if string_compare(_w, word2)>fuzzy_match
-		{
-			struct.index1 += i;
-			struct.matched[@1] = struct.index1;
-			struct.matched[@3] = struct.index2;
-			source.visual_set_word(struct.index1, word_color.lime);
-			reference.visual_set_word(struct.index2, word_color.lime);
-			struct.index1++;
-			struct.index2++;
-			return true;
-		}
-	}
-	return false
-}
-function time_check(struct)
-{
-	// Check if timestamp difference too much
-	var source = struct.source;
-	var reference = struct.reference;
-	
-	var line1 = source.word_get_line(struct.index0);
-	var line2 = reference.word_get_line(struct.matched[2]);
-	
-	var time1 = source.get_timestamp(line1, true);
-	var time2 = reference.get_timestamp(line2, true);
-	var offset = time2 - time1;
-	
-	var line = source.word_get_line(struct.index1);
-	var time1 = source.get_timestamp(line, true);
-	var time2 = source.get_timestamp(line, false);
-	
-	line = reference.word_get_line(struct.index2);
-	var time3 = reference.get_timestamp(line, true) - offset;
-	var time4 = reference.get_timestamp(line, false) - offset;
-	
-	if time4<time1-time_tolerance || time3>time2+time_tolerance return false;
-	return true;
-}
-function check_is_begin(struct)
-{
-	// Check if seeking is at beginning of line, (first or second word)
-	var source = struct.source;
-	var reference = struct.reference;
-	var line1 = source.word_get_line(struct.matched[1]);
-	var line2 = reference.word_get_line(struct.matched[3]);
-	
-	var array1 = source.lines[line1];
-	if struct.matched[1]-array1[0]>1 return false;
-	
-	var array2 = reference.lines[line2];
-	if struct.matched[3]-array2[0]>1 return false;
-	return true
-	
-}
-function timestamp_check(struct)
-{
-	// Check if timestamp should match;
-	static tolerance = 0;
-	var source = struct.source;
-	var reference = struct.reference;
-	
-	if is_undefined(struct.offset)
-	{
-		if !check_is_begin(struct) return true;
-		var line1 = source.word_get_line(struct.matched[1]);
-		var line2 = reference.word_get_line(struct.matched[3]);
-		var time1 = source.get_timestamp(line1, true);
-		var time2 = reference.get_timestamp(line2, true);
-		struct.offset = time2-time1;
-		struct.matched[@4]=struct.offset;
-		tolerance = 0;
-		return true;
-	}
-	if !check_is_begin(struct) return true;
-	var line1 = source.word_get_line(struct.matched[1]);
-	var line2 = reference.word_get_line(struct.matched[3]);
-	var time1 = source.get_timestamp(line1, true);
-	var time2 = reference.get_timestamp(line2, true);
-	var _o = time2-time1;
-	tolerance+=_o-struct.offset;
-	if tolerance>time_tolerance/2 return false;
-	return true;
-}
-function add_timestamp(source, reference, match)
-{
-	var time = array_create(8);
-	var line1 = source.word_get_line(match[0]);
-	var line2 = source.word_get_line(match[1]);
-	time[@1] = source.get_timestamp(line1, true);
-	time[@2] = source.get_timestamp(line2, false);
-	time[@5] = line1;
-	time[@6] = line2;
-	time[@7] = match[4]
-	
-	line1 = reference.word_get_line(match[2]);
-	line2 = reference.word_get_line(match[3]);
-	time[@3] = reference.get_timestamp(line1, true);
-	time[@4] = reference.get_timestamp(line2, false);
-	
-	
-	time[@0] = subtitle_task.offset;
-	ds_list_add(main.task, time);
+	ds_list_add(main.task, [struct.index1, struct.index2, struct.seek1, struct.seek2])
 }
 
 function srt_generate_begin(source, translate)

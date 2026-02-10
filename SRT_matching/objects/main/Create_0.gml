@@ -29,7 +29,7 @@ add_source = function()
 	file = get_open_filename("Source subtitle|*.srt", "");
 	if (file != "")
 	{
-		log("Added source subtitle: "+string(file))
+		log("Added transcribed subtitle: "+string(file))
 		source = instance_create_depth(0,0,0,subtitle,{filename: file})
 		with(source) {display = display_original;}
 	}
@@ -54,8 +54,7 @@ match_begin = function()
 {
 	if source==-1 {log("Missing source subtitle, press [c_lime]<F1>[/] to add [c_yellow]Source[/] subtitle");exit}
 	if reference==-1 {log("Missing reference subtitle, press [c_lime]<F2>[/] to add [c_yellow]Reference[/] subtitle");exit}
-	if translate==-1 {log("Missing translate subtitle, press [c_lime]<F3>[/] to add [c_yellow]Translated[/] subtitle");exit}
-	if source.alarm[0]>=0 || reference.alarm[0]>=0 || translate.alarm[0]>=0 {log("[c_orange]Subtitle import is in progress![/] Please wait");exit}
+	if source.alarm[0]>=0 || reference.alarm[0]>=0 {log("[c_orange]Subtitle import is in progress![/] Please wait");exit}
 	
 	matching = matching_begin(source, reference, 0);
 }
@@ -66,13 +65,12 @@ show_progress = function(text, progress=-1)
 	progress_bar = progress;
 }
 
-load_config();
+//load_config();
 load_dictionary();
 pending_reference = [-1,-1];
 debugging=false;
 log("Press [c_lime]<F1>[/] to add [c_yellow]Source[/] subtitle");
 log("Press [c_lime]<F2>[/] to add [c_yellow]Reference[/] subtitle");
-log("Press [c_lime]<F3>[/] to add [c_yellow]Translated[/] subtitle");
 log("Press [c_orange]<F5>[/] to restart and remove all subtitle");
 
 render_button = function(x, y, radius, ind, alpha=0.1)
