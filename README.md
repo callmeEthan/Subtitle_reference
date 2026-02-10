@@ -32,7 +32,7 @@ Press (+) to add subtitle files.
 
 Once enough data is provided, you can click arrow button, or press [Enter] key to begin subtitle matching.  
 When matching has finished, you can click the save button, or press [Ctrl+S] to export subtitle file.  
-Pressed [F5] to restart application, flush all current data.  
+Press [F5] to restart application, flush all current data.  
 > When saving subtitle, it also save to Debugging.txt, this file contain all the line failed to match, retained from the source subtitle. It can be useful for manual fixing/translation.
 
 ### Result
@@ -49,6 +49,4 @@ Some factor to consider:
 
 ### The final human touch will always be required for a perfect subitle.
 While not 100% perfect, if the provided data is sufficient and accurate, 80-90% of subitle will be generated for you.  
-Recommend using tool such as [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit/releases) to finish your subtitle:  
-- Timing overlapse.  
-- Untranslated line.  
+Recommend using tool such as [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit/releases) to finish your subtitle, it will indicate problems such as timing overlapse, use Debug file to quickly find untranslated line.  
