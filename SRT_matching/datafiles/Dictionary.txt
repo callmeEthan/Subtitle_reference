@@ -1,0 +1,3 @@
+// Contain word contraction, it will be replaced to keep consistency for better matching, replace by colon
+"it is":"it's"
+"i am":"i'm"

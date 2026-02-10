@@ -1,10 +1,14 @@
 # Subtitle cross-reference tool
+### Sync subtitles in different language
+> This tool is not for creators, only average viewers, who often only have access to english subtitle.  
+If you have access to edit timeline, it is better to use something like Subtitle Remapper.
+
 ![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true)
 ### Introduction
 Want to share a fan-edit media? but subtitle in your prefered language is not available? Dont have the patience to create and translate subtitle from scratch? This tool will help generate **most** of the subtitle in your language.
-> Made in gamemaker, just because
 
-> This is a proof of concept that I hastily put together in the span of 2 days, while the overal result are good, someone with better coding skill might be able to create something better (audio recognition, fuzzy string matching, AI,...) and yield better result.
+> This is a proof of concept that I hastily put together in the span of 2 days, while the overal result are good, someone with better coding skill might be able to create something better (audio recognition, fuzzy string matching, AI,...) and yield better result.  
+Made in gamemaker, just because-
 
 ### Requirement
 - Compiled for windows.
@@ -16,9 +20,10 @@ Want to share a fan-edit media? but subtitle in your prefered language is not av
 ### How it works?
 This tool break all subtitle lines down to arrays of words, then compare each word to find matching lines.  
 Estimate the editted timestamp offset, then pull lines from translated subtitle to create new subtitle.
-> This tool pull line from translated subtitle, it does not perform any translation, any new line not available in original media (restored deleted scene) will not be translated and will retain from source subtitle.
+> This tool pull lines from the translated subtitle, it does not perform any translation, any new line not available in original media (restored deleted scene) will not be translated and retained from source subtitle.
 
 ### Usage
+![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/preview.jpg?raw=true)
 Download the latest release, extract and open exe file.
 Press (+) to add subtitle files.
 - Only 1 **Source** subtitle file are accepted, adding another will replace current data.
@@ -27,7 +32,7 @@ Press (+) to add subtitle files.
 
 Once enough data is provided, you can click arrow button, or press [Enter] key to begin subtitle matching.  
 When matching has finished, you can click the save button, or press [Ctrl+S] to export subtitle file.  
-Pressed [F5] to restart application, flush all current data.  
+Press [F5] to restart application, flush all current data.  
 > When saving subtitle, it also save to Debugging.txt, this file contain all the line failed to match, retained from the source subtitle. It can be useful for manual fixing/translation.
 
 ### Result
@@ -44,6 +49,4 @@ Some factor to consider:
 
 ### The final human touch will always be required for a perfect subitle.
 While not 100% perfect, if the provided data is sufficient and accurate, 80-90% of subitle will be generated for you.  
-Recommend using tool such as [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit/releases) to finish your subtitle:  
-- Timing overlapse.  
-- Untranslated line.  
+Recommend using tool such as [SubtitleEdit](https://github.com/SubtitleEdit/subtitleedit/releases) to finish your subtitle, it will indicate problems such as timing overlapse, use Debug file to quickly find untranslated line.  
