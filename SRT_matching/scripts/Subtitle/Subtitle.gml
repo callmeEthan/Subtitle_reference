@@ -2,7 +2,7 @@ globalvar match_length, match_list,match_minimum, match_maximum, time_tolerance,
 remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
 match_length = 10;
 match_list = ds_priority_create();
-match_minimum = 2;
+match_minimum = 1;
 match_maximum = 7;
 time_tolerance = 1; 
 fuzzy_match = 0.5;
@@ -103,7 +103,7 @@ function match_seek(struct)
 		
 	switch(struct.stage)
 	{
-		case 0:			
+		case 0:
 			struct.stage = 1;
 			struct.match = 0;
 			struct.evaluate = 0;	struct.highest=0; struct.highest_match=0
@@ -134,9 +134,9 @@ function match_seek(struct)
 				struct.line2 += reference.get_line(i);
 				if string_length(struct.line2)>=struct.length1 {break}
 			}
-			struct.seek2=i;
+			struct.seek2=i+1;
 			var _match = string_compare(struct.line1, struct.line2);
-			
+			//log("string compare "+string(struct.index1)+"="+string(struct.index2)+" ("+struct.line1+"="+struct.line2+")")
 			if _match<fuzzy_match 
 			{
 				struct.stage = 4;
@@ -147,13 +147,20 @@ function match_seek(struct)
 			struct.match = [struct.index1, struct.index2, struct.seek1, struct.seek2]
 			struct.evaluate=_match;
 			struct.stage=3;
-			main.show_progress("Matching line "+string(struct.index1)+" of "+string(source.size)+" [c_orange]("+string(round(struct.line/struct.size*100))+"%)[/], referencing "+string(round(struct.index2/reference.size*100))+"%")
+			struct.addition=0;
+			main.show_progress("Matching line "+string(struct.index1)+" of "+string(source.size)+" [c_orange]("+string(round(struct.index1/struct.size*100))+"%)[/], referencing "+string(round(struct.index2/reference.size*100))+"%")
 			break;
 			
 		case 3: // match subsequence lines
+			struct.addition++
 			struct.size1 = string_length(struct.line1);
 			struct.size2 = string_length(struct.line2);
 			struct.seek1++;
+			if struct.seek1>=source.size  // end of file
+			{
+				struct.stage = 4;
+				break;
+			}
 			struct.line1 += source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_green); source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
 			struct.length1 = string_length(struct.line1);
 			for(var i=struct.seek2; i<reference.size; i++)
@@ -161,7 +168,7 @@ function match_seek(struct)
 				struct.line2 += reference.get_line(i);
 				if string_length(struct.line2)>=struct.length1 {break}
 			}
-			struct.seek2=i;
+			struct.seek2=i+1;
 			var pos = min(struct.size1, struct.size2);
 			var str1 = string_copy(struct.line1, pos+1, string_length(struct.line1)-pos);
 			var str2 = string_copy(struct.line2, pos+1, string_length(struct.line2)-pos);
@@ -180,7 +187,7 @@ function match_seek(struct)
 			break;
 			
 		case 4: // evaluate
-			if true //struct.evaluate>match_minimum
+			if struct.evaluate>match_minimum
 			{
 				if struct.evaluate>struct.highest
 				{
@@ -198,6 +205,7 @@ function match_seek(struct)
 			if struct.highest_match==0
 			{
 				source.visual_set_line(struct.index1, c_red);
+				ds_list_add(main.task, [subtitle_task.retain, struct.index1])
 				struct.index1++;
 			} else {
 				for(var i=struct.index1; i<=struct.highest_match[2]; i++)
@@ -205,9 +213,11 @@ function match_seek(struct)
 					source.visual_set_line(i, c_black)
 				}
 				struct.index1 = struct.highest_match[2]+1;
-				var _match = string(struct.highest_match);
+				array_insert(struct.highest_match, 0, subtitle_task.match);
+				ds_list_add(main.task, struct.highest_match);
 			}
 			struct.stage=0
+			if struct.index1>=source.size {struct.stage=6}
 			break
 			
 		case 6: // end
@@ -219,7 +229,6 @@ function match_seek(struct)
 	}
 	return true
 }
-
 function add_timeline(struct)
 {
 	ds_list_add(main.task, [struct.index1, struct.index2, struct.seek1, struct.seek2])

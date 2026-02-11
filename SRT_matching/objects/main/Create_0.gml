@@ -13,6 +13,7 @@ task = ds_list_create();
 enum subtitle_task
 {
 	retain,
+	match,
 	offset
 }
 alarm[0]=10
