@@ -162,7 +162,7 @@ function generate_nfo(file, episode, output)
 }
 
 globalvar match_speed, import_speed;
-match_speed = 100;
+match_speed = 200;
 import_speed = 100;
 
 function save_config(filename = "\\Config.ini")

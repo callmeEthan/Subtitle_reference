@@ -41,6 +41,13 @@ repeat(import_speed)
 			break
 	}
 	file_text_readln(file)
-	if file_text_eof(file) {scroll=0; file_text_close(file); exit}
+	if file_text_eof(file)
+	{
+		break
+	}
 }
-if !file_text_eof(file) {alarm[0]=1} else {file_text_close(file); scroll=0}
+if !file_text_eof(file) {alarm[0]=1} else
+{
+	file_text_close(file);
+	scroll=0
+}

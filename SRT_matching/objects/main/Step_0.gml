@@ -20,7 +20,7 @@ if is_struct(generating)
 } else {
 	if keyboard_check(vk_control)
 	{
-		if keyboard_check_pressed(ord("S")) {main.generating = srt_generate_begin(source, translate)}
+		if keyboard_check_pressed(ord("S")) {main.generating = srt_generate_begin(source, reference, translate)}
 		if keyboard_check_pressed(ord("C")) {save_config()}
 	}
 }

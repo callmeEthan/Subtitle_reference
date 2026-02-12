@@ -32,25 +32,77 @@ add_source = function()
 	{
 		log("Added transcribed subtitle: "+string(file))
 		source = instance_create_depth(0,0,0,subtitle,{filename: file})
-		with(source) {display = display_original;}
 	}
 }
 add_reference = function()
 {
+	if reference!=-1 and reference.alarm[0]>=0 return false;
+	var filename;
+	filename = get_open_filename("Reference subtitle|*.srt", "");
+	if (filename == "") return false;
+	/*
 	if reference!=-1
 	{
 		with(reference) instance_destroy();
 		reference=-1
 	};
-	var file;
-	file = get_open_filename("Reference subtitle|*.srt", "");
 	if (file != "")
 	{
 		log("Added reference subtitle: "+string(file))
 		reference = instance_create_depth(width*0.5,0,0,subtitle,{filename: file})
 		with(reference) {display = display_original;}
+	}*/
+	if reference=-1
+	{
+		reference = instance_create_depth(width*1/3,0,0,subtitle,{filename: filename})
+		reference.file_count++;
+	} else {
+		reference.filename = filename;
+		reference.file_count++;
+		with(reference)
+		{
+			file = file_text_open_read(filename);
+			format=-1;
+			str="";	time_from=0; time_to=0;
+			alarm[0]=1
+		}
 	}
+	var offset = 0;
+	if reference.duration>0 offset=floor(reference.offset+10);
+	if translate!=-1 offset = max(offset, translate.offset);
+	reference.offset = offset;
+	log("reference offset="+string(reference.offset))
 }
+add_translate = function()
+{
+	if translate!=-1 and translate.alarm[0]>=0 return false;
+	var filename;
+	filename = get_open_filename("Translate subtitle|*.srt", "");
+	if (filename == "") return false;
+	
+	if translate=-1
+	{
+		translate = instance_create_depth(width*2/3,0,0,subtitle,{filename: filename})
+		translate.file_count++
+		with(translate) {display = display_original;}
+	} else {
+		translate.filename = filename;
+		translate.file_count++
+		with(translate)
+		{
+			file = file_text_open_read(filename);
+			format=-1;
+			str="";	time_from=0; time_to=0;
+			alarm[0]=1
+		}
+	}
+	var offset = 0;
+	if translate.duration>0 offset=floor(translate.offset+10);
+	if reference!=-1 offset = max(offset, reference.offset);
+	translate.offset = offset;
+	log("translate offset="+string(translate.offset))
+}
+
 match_begin = function()
 {
 	if source==-1 {log("Missing source subtitle, press [c_lime]<F1>[/] to add [c_yellow]Source[/] subtitle");exit}
