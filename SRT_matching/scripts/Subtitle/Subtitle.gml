@@ -1,10 +1,10 @@
 globalvar match_length,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary, remove_colon;
 remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
 match_length = 10; // Minimum number of character for fuzzy matching, include multiple line if necessary
-match_minimum = 0.7; // Minimum score to consider as matched, otherwise retain original line
-match_maximum = 7; // Maximum score for matching, skip checking other line.
+match_minimum = 0.2; // Minimum score to consider as matched, otherwise retain original line
+match_maximum = 70; // Maximum score for matching, skip checking other line.
 time_tolerance = 0.5; // increase may cause exessive line copying
-fuzzy_match = 0.4; // mininum match per line
+fuzzy_match = 0.3; // mininum match per line
 dictionary = ds_list_create();
 
 function string_contraction(str)
@@ -130,10 +130,10 @@ function match_seek(struct)
 			struct.seek1++
 			while(struct.length1<match_length)
 			{
+				if struct.seek1>=source.size break;
 				struct.line1 += source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_navy);source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
 				struct.length1 = string_length(struct.line1);
 				struct.seek1++;
-				if struct.seek1>=source.size break;
 			}
 			
 			struct.line2 = "";
@@ -145,17 +145,19 @@ function match_seek(struct)
 			struct.seek2=i+1;
 			var _match = string_compare(struct.line1, struct.line2);
 			//log("string compare "+string(struct.index1)+"="+string(struct.index2)+" ("+struct.line1+"="+struct.line2+")")
-			if _match<fuzzy_match 
+			if _match<fuzzy_match || _match<buffer_peek(source.match_score, struct.index1*buffer_sizeof(buffer_f16), buffer_f16)
 			{
 				struct.stage = 4;
 				break;
 			}
+			
 			var offset = check_timing(struct);
 			if !is_undefined(offset) struct.offset=offset;
 			
 			reference.visual_set_line(struct.seek2, merge_colour(c_red, c_lime, _match));
 			reference.scroll = clamp(reference.scroll, struct.seek2-20, struct.seek2-10);
-			struct.match = [struct.index1, struct.index2, struct.seek1-1, struct.seek2-1, offset]
+			struct.match = [struct.index1, struct.index2, struct.seek1-1, struct.seek2-1, offset];
+			struct.scores = [_match]
 			struct.evaluate=_match;
 			struct.stage=3;
 			struct.addition=0;
@@ -180,11 +182,12 @@ function match_seek(struct)
 			}
 			struct.seek2=i+1;
 			var pos = min(struct.size1, struct.size2);
+			//var pos = max(struct.size1, string_length(struct.line1)-match_length);
 			var str1 = string_copy(struct.line1, pos+1, string_length(struct.line1)-pos);
 			var str2 = string_copy(struct.line2, pos+1, string_length(struct.line2)-pos);
 			//log("additional compare "+string(struct.line1)+"="+string(struct.line2)+" pos: "+string(pos)+" ("+str1+"="+str2+")")
 			var _match = string_compare(str1, str2);
-			if _match<fuzzy_match 
+			if _match<fuzzy_match || check_duration(struct)==false
 			{
 				struct.stage = 4;
 				break;
@@ -193,6 +196,7 @@ function match_seek(struct)
 			reference.scroll = clamp(reference.scroll, struct.seek2-20, struct.seek2-10);
 			struct.match[@2] = struct.seek1-1;
 			struct.match[@3] = struct.seek2-1;
+			array_push(struct.scores, _match);
 			struct.evaluate += _match;
 			var offset = check_timing(struct, struct.offset_skip);
 			if !is_undefined(offset)
@@ -217,6 +221,7 @@ function match_seek(struct)
 				{
 					struct.highest=struct.evaluate;
 					struct.highest_match=struct.match;
+					struct.highest_score=struct.scores;
 				}
 			}
 			if struct.evaluate>match_maximum {struct.stage=5; break}	// high score, finish matching
@@ -236,10 +241,17 @@ function match_seek(struct)
 			} else {
 				var _match = struct.highest_match;
 				var offset = _match[4];
+				var ind = ds_list_size(main.task)
 				for(var i=struct.index1; i<=_match[2]; i++)
 				{
-					if is_undefined(offset) source.visual_set_line(i, c_purple)
-					else source.visual_set_line(i, c_green)
+					buffer_poke(source.line_task, i*buffer_sizeof(buffer_s16), buffer_s16, ind);
+					if is_undefined(offset) source.visual_set_line(i, c_purple);
+					else source.visual_set_line(i, c_green);
+				}
+				var s = array_length(struct.highest_score);
+				for(var i=0; i<s; i++)
+				{
+					buffer_poke(source.match_score, (struct.index1+i)*buffer_sizeof(buffer_f16), buffer_f16, struct.highest_score[i]);
 				}
 				struct.index1 = _match[2]+1;
 				array_insert(_match, 0, subtitle_task.match);
@@ -289,6 +301,29 @@ function check_timing(struct, skip=0)
 	}
 	return undefined
 }
+function check_duration(struct, tolerance=1)
+{
+	var source = struct.source;
+	var reference = struct.reference;
+	var _from = source.get_timestamp(struct.index1, true);
+	var _to = source.get_timestamp(struct.seek1-1, false);
+	
+	var _time = source.get_timestamp(struct.seek2-1, true);
+	if _time>_to+tolerance {return false}
+	return true;
+}
+/*function task_override(struct, match)
+{
+	var source = struct.source;
+	var reference = struct.reference;
+	
+	for(var i=match[0]; i<=match[2]; i++)
+	{
+		var ind = buffer_peek(source.line_task, i*buffer_sizeof(buffer_u16));
+		var task = main.task[| ind];
+	}
+}
+*/
 
 function srt_generate_begin(source, reference, translate=-1)
 {
@@ -367,11 +402,12 @@ function srt_generate(struct)
 			var line = task[2];
 			var size = task[4];
 			var offset;
-			offset = task[5];
-			if is_undefined(offset) offset = reference.get_timestamp(line, true) - source.get_timestamp(task[1], true);
+			//offset = task[5];
+			//if is_undefined(offset) offset = reference.get_timestamp(line, true) - source.get_timestamp(task[1], true);
+			offset = reference.get_timestamp(line, true) - source.get_timestamp(task[1], true);
 			if translate==-1
 			{
-				for(var i=line; i<size; i++)
+				for(var i=line; i<=size; i++)
 				{
 					var _from = reference.get_timestamp(i, true)-offset;
 					var _to = reference.get_timestamp(i, false)-offset;

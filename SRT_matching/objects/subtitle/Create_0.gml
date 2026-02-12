@@ -40,6 +40,8 @@ string_process = function(str)
 		array_push(lines, 0);
 	}
 	buffer_write(visual, buffer_u32, 0);
+	buffer_write(line_task, buffer_s16, -1);
+	buffer_write(match_score, buffer_f16, 0);
 }
 scroll_clamp = function(lines, pos)
 {
@@ -89,7 +91,7 @@ display_phonic = function()
 	var s = min(scroll+ceil(height/_h)-2, size);
 	for(var i=scroll; i<s; i++)
 	{
-		draw_text_transformed(x, _h*_y, i, fontsize, fontsize, 0);	// index
+		draw_text_transformed(x, _h*_y, i+1, fontsize, fontsize, 0);	// index
 		var _x = x+ _n+_space*2
 		var l = lines[i]
 		var ind = i;
@@ -136,7 +138,7 @@ display_original = function()
 	var s = min(scroll+ceil(height/_h)-2, size);
 	for(var i=scroll; i<s; i++)
 	{
-		draw_text_transformed(x, _h*_y, i, fontsize, fontsize, 0);	// index
+		draw_text_transformed(x, _h*_y, i+1, fontsize, fontsize, 0);	// index
 		var _x = x+ _n+_space*2
 		var l = lines[i]
 		var ind = i;
@@ -172,10 +174,10 @@ str="";	time_from=0; time_to=0;
 lines = [];	// each value contain an array of every word in the line
 timestamp = buffer_create(16, buffer_grow, 1);	// timestamp of each line
 visual = buffer_create(16, buffer_grow, 1);	// visual color of each word
-words = ds_map_create();	// all position of each word for fast indexing
-words_pos = buffer_create(16, buffer_grow, 1);	// line index of each words
 original = [];
 timestamp_seek = buffer_create(16, buffer_grow, 1);
+line_task = buffer_create(16, buffer_grow, 1);
+match_score = buffer_create(16, buffer_grow, 1);
 
 alarm[0]=1
 display = display_phonic;
