@@ -33,10 +33,10 @@ if matching==-1 && generating==-1
 	if ds_list_size(task)>0
 	{
 		if render_button(width*0.9, height*0.875, height*0.1, 2, 0.5) && mouse_check_button_pressed(mb_left) {main.generating = srt_generate_begin(source, reference, translate)}
-		draw_text_transformed(width*0.9, height*(0.875+0.06), "Save subtitle", 1, 1, 0)
+		draw_text_transformed(width*0.9, height*(0.875+0.06), "Sync translated\nsubtitle", 1, 1, 0)
 		
 		if render_button(width*0.7, height*0.875, height*0.1, 2, 0.5) && mouse_check_button_pressed(mb_left) {main.generating = srt_generate_begin(source, reference)}
-		draw_text_transformed(width*0.7, height*(0.875+0.06), "Sync subtitle", 1, 1, 0)
+		draw_text_transformed(width*0.7, height*(0.875+0.06), "Save matched\nsubtitle", 1, 1, 0)
 	} else if source!=-1 && reference!=-1
 	{
 		if render_button(width*0.9, height*0.875, height*0.1, 1, 0.5) && mouse_check_button_pressed(mb_left) match_begin();

@@ -11,6 +11,7 @@ function string_compare(string1, string2, ngram=3)
 {
 	// Simple fuzzy string comparision, allow to typo tolerance, string length must be longer than ngram
 	// return a value between 0 to 1, with 1 being perfect match and vice versa
+	// Fuzzy: 1 way check, ignore second string matching.
 	if string_length(string1)<=ngram || string_length(string2)<=ngram
 	{
 		if string1==string2 return 1 else return 0;

@@ -49,5 +49,5 @@ repeat(import_speed)
 if !file_text_eof(file) {alarm[0]=1} else
 {
 	file_text_close(file);
-	scroll=0
+	if file_count<=2 scroll=0
 }
