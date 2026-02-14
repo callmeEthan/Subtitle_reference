@@ -1,10 +1,10 @@
 globalvar match_length,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary, remove_colon;
 remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
-match_length = 10; // Minimum number of character for fuzzy matching, include multiple line if necessary
-match_minimum = 0.2; // Minimum score to consider as matched, otherwise retain original line
-match_maximum = 70; // Maximum score for matching, skip checking other line.
-time_tolerance = 0.5; // increase may cause exessive line copying
-fuzzy_match = 0.3; // mininum match per line
+match_length = 5; // Minimum number of character for fuzzy matching, include multiple line if necessary
+match_minimum = 0.4; // Minimum score to consider as matched, otherwise retain original line
+match_maximum = 10; // Maximum score for matching, skip checking other line.
+time_tolerance = 0.5;
+fuzzy_match = 0.2; // mininum match per line
 dictionary = ds_list_create();
 
 function string_contraction(str)
@@ -94,6 +94,8 @@ function matching_begin(source, reference)
 		index2: 0,
 		failed: 0,
 	}
+	buffer_fill(source.match_score, 0, buffer_f16, 0, array_length(source.lines))
+	buffer_fill(reference.match_score, 0, buffer_f16, 0, array_length(reference.lines))
 	return struct;
 }
 function match_seek(struct)
@@ -109,7 +111,6 @@ function match_seek(struct)
 			struct.evaluate = 0;	struct.highest=0; struct.highest_match=0
 			struct.index2=0;
 			struct.size1=0;	struct.size2=0;
-			//reference.visual_reset();
 			
 		case 1:
 			struct.seek1 = struct.index1;
@@ -121,13 +122,19 @@ function match_seek(struct)
 			break
 			
 		case 2:	// first fuzzy match
-			main.show_progress("Matching line "+string(struct.index1)+" of "+string(source.size)+" [c_orange]("+string(round(struct.index1/struct.size*100))+"%)[/], referencing "
-			+string(round(struct.index2/reference.size*100))+"%, status: [c_lime]"
-			+string(100-round(struct.failed/struct.index1*100))+"% matched")
+			main.show_progress("Matching line "+string(struct.index1)+" of "+string(source.size)+" [c_orange]("+string(floor(struct.index1/struct.size*100))+"%)[/], referencing "
+			+string(floor(struct.index2/reference.size*100))+"%, status: [c_lime]"
+			+string(100-floor(struct.failed/struct.index1*100))+"% matched")
 			
 			struct.line1 = source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_navy);source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
 			struct.length1 = string_length(struct.line1);
 			struct.seek1++
+			if struct.length1<match_length // line too short to match, skipping
+			{
+				struct.stage = 4;
+				break;
+			}
+			/*
 			while(struct.length1<match_length)
 			{
 				if struct.seek1>=source.size break;
@@ -135,7 +142,7 @@ function match_seek(struct)
 				struct.length1 = string_length(struct.line1);
 				struct.seek1++;
 			}
-			
+			*/
 			struct.line2 = "";
 			for(var i=struct.seek2; i<reference.size; i++)
 			{
@@ -143,9 +150,10 @@ function match_seek(struct)
 				if string_length(struct.line2)>=struct.length1 {break}
 			}
 			struct.seek2=i+1;
+			var _prev = source.line_get_score(struct.index1);
 			var _match = string_compare(struct.line1, struct.line2);
 			//log("string compare "+string(struct.index1)+"="+string(struct.index2)+" ("+struct.line1+"="+struct.line2+")")
-			if _match<fuzzy_match || _match<buffer_peek(source.match_score, struct.index1*buffer_sizeof(buffer_f16), buffer_f16)
+			if _match<fuzzy_match || _match<_prev
 			{
 				struct.stage = 4;
 				break;
@@ -160,14 +168,11 @@ function match_seek(struct)
 			struct.scores = [_match]
 			struct.evaluate=_match;
 			struct.stage=3;
-			struct.addition=0;
 			break;
 			
 		case 3: // match subsequence lines
-			struct.addition++
 			struct.size1 = string_length(struct.line1);
 			struct.size2 = string_length(struct.line2);
-			struct.seek1++;
 			if struct.seek1>=source.size  // end of file
 			{
 				struct.stage = 4;
@@ -175,14 +180,16 @@ function match_seek(struct)
 			}
 			struct.line1 += source.get_line(struct.seek1); source.visual_set_line(struct.seek1, c_teal); source.scroll = clamp(source.scroll, struct.seek1-20, struct.seek1-10);
 			struct.length1 = string_length(struct.line1);
+			struct.seek1++;
 			for(var i=struct.seek2; i<reference.size; i++)
 			{
 				struct.line2 += reference.get_line(i);
 				if string_length(struct.line2)>=struct.length1 {break}
 			}
 			struct.seek2=i+1;
-			var pos = min(struct.size1, struct.size2);
-			//var pos = max(struct.size1, string_length(struct.line1)-match_length);
+			//log("check next line "+string(struct.seek2-1))
+			//var pos = min(struct.size1, struct.size2);
+			var pos = min(struct.size1, string_length(struct.line1)-match_length);
 			var str1 = string_copy(struct.line1, pos+1, string_length(struct.line1)-pos);
 			var str2 = string_copy(struct.line2, pos+1, string_length(struct.line2)-pos);
 			//log("additional compare "+string(struct.line1)+"="+string(struct.line2)+" pos: "+string(pos)+" ("+str1+"="+str2+")")
@@ -198,12 +205,13 @@ function match_seek(struct)
 			struct.match[@3] = struct.seek2-1;
 			array_push(struct.scores, _match);
 			struct.evaluate += _match;
+			
 			var offset = check_timing(struct, struct.offset_skip);
 			if !is_undefined(offset)
 			{
 				if !is_undefined(struct.offset)
 				{
-					if abs(struct.offset-offset)>0.3	// timeing is off, skip checking
+					if abs(struct.offset-offset)>0.3	// timing is off, skip checking
 					{
 						struct.stage = 4;
 						break
@@ -224,26 +232,37 @@ function match_seek(struct)
 					struct.highest_score=struct.scores;
 				}
 			}
-			if struct.evaluate>match_maximum {struct.stage=5; break}	// high score, finish matching
-			if struct.index2>=reference.size {struct.stage=5; break}	// end of reference, go to next line
+			if struct.evaluate>match_maximum {struct.stage=5; break}	// highest score, skip matching
+			if struct.index2>=reference.size {struct.stage=5; break}	// end of reference, end match and go to next line
 			struct.index2+=1;
 			struct.stage=1;	// seek again, reference different line
 			break
 			
 		case 5:	// finish match line
-			log("Line "+string(struct.index1)+" Finish matching, score="+string(struct.highest))
 			if struct.highest_match==0
 			{
-				source.visual_set_line(struct.index1, c_red);
-				ds_list_add(main.task, [subtitle_task.retain, struct.index1])
+				log("Line "+string(struct.index1)+" Finish matching, score="+string(struct.highest))
+				if buffer_peek(source.line_task, struct.index1*buffer_sizeof(buffer_s16), buffer_s16)<0
+				{
+					// no line match (Failed)
+					source.visual_set_line(struct.index1, c_red);
+					struct.failed++;
+					ds_list_add(main.task, [subtitle_task.retain, struct.index1])
+				} else {
+					// line already matched previously. (Acceptable)
+					source.visual_set_line(struct.index1, c_olive);
+				}
+				
 				struct.index1++;
-				struct.failed++;
 			} else {
+				log("Line "+string(struct.index1)+" Finish matching, score="+string(struct.highest)+" ("+string(struct.match[2]-struct.match[0]+1)+" line)")
 				var _match = struct.highest_match;
+				task_override(struct, _match);
 				var offset = _match[4];
-				var ind = ds_list_size(main.task)
+				var ind = ds_list_size(main.task);
 				for(var i=struct.index1; i<=_match[2]; i++)
 				{
+					
 					buffer_poke(source.line_task, i*buffer_sizeof(buffer_s16), buffer_s16, ind);
 					if is_undefined(offset) source.visual_set_line(i, c_purple);
 					else source.visual_set_line(i, c_green);
@@ -251,9 +270,15 @@ function match_seek(struct)
 				var s = array_length(struct.highest_score);
 				for(var i=0; i<s; i++)
 				{
-					buffer_poke(source.match_score, (struct.index1+i)*buffer_sizeof(buffer_f16), buffer_f16, struct.highest_score[i]);
+					var _score = struct.highest_score[i];
+					buffer_poke(source.match_score, (_match[0]+i)*buffer_sizeof(buffer_f16), buffer_f16, _score);
 				}
 				struct.index1 = _match[2]+1;
+				for(var i=1; i<s; i++) // recheck line if score isn't higher
+				{
+					var _score = struct.highest_score[i];
+					if _score<0.9 {struct.index1 = _match[0]+i; break}
+				}
 				array_insert(_match, 0, subtitle_task.match);
 				ds_list_add(main.task, _match);
 			}
@@ -305,36 +330,42 @@ function check_duration(struct, tolerance=1)
 {
 	var source = struct.source;
 	var reference = struct.reference;
+	
 	var _from = source.get_timestamp(struct.index1, true);
 	var _to = source.get_timestamp(struct.seek1-1, false);
 	
-	var _time = source.get_timestamp(struct.seek2-1, true);
-	if _time>_to+tolerance {return false}
+	var _start = reference.get_timestamp(struct.index2, true)
+	var _end = reference.get_timestamp(struct.seek2-1, true);
+	//if _start>_to+tolerance {return false}
+	if (_end-_start)>(_to-_from)+tolerance
+	{
+		return false;
+	}
 	return true;
 }
-/*function task_override(struct, match)
+function task_override(struct, match)
 {
 	var source = struct.source;
 	var reference = struct.reference;
 	
 	for(var i=match[0]; i<=match[2]; i++)
 	{
-		var ind = buffer_peek(source.line_task, i*buffer_sizeof(buffer_u16));
+		var ind = buffer_peek(source.line_task, i*buffer_sizeof(buffer_s16), buffer_s16);
+		if ind<0 continue;
 		var task = main.task[| ind];
+		task[@3] = min(task[3], match[0]-1);
 	}
 }
-*/
+
 
 function srt_generate_begin(source, reference, translate=-1)
 {
-	log("Initiate subtitle generate...")
 	var filename;
 	filename = get_save_filename("Subtitle file|*.srt", "");
-	if (filename != "")
-	{
-		var file = file_text_open_write(filename);
-	} else return undefined;
+	if (filename = "") return -1;
 	
+	log("Initiate subtitle generate...")
+	var file = file_text_open_write(filename);
 	var path = filename_path(filename);
 	if file_exists( path+"\\Debugging.txt") file_delete(path+"Debugging.txt");
 	var _debug = file_text_open_write(path+"Debugging.txt")
@@ -402,26 +433,40 @@ function srt_generate(struct)
 			var line = task[2];
 			var size = task[4];
 			var offset;
-			//offset = task[5];
-			//if is_undefined(offset) offset = reference.get_timestamp(line, true) - source.get_timestamp(task[1], true);
+			var _duration = source.get_timestamp(task[3], false)-source.get_timestamp(task[1], true);
+			
 			offset = reference.get_timestamp(line, true) - source.get_timestamp(task[1], true);
+			log("source match line "+string(task[1]+1)+"-"+string(task[3]+1)+" with reference "+string(task[2]+1)+"-"+string(task[4]+1));
 			if translate==-1
 			{
+				var _start = reference.get_timestamp(line, true);
 				for(var i=line; i<=size; i++)
 				{
+					var _to = reference.get_timestamp(i, true);
+					if (_to-_start)>_duration-time_tolerance break
+					
+					reference.scroll = clamp(reference.scroll, i-20, i-10);
 					var _from = reference.get_timestamp(i, true)-offset;
 					var _to = reference.get_timestamp(i, false)-offset;
 					var str = reference.original[i];
 				
-					file_text_write_string(struct.file, struct.line);
-					file_text_writeln(struct.file);
-					file_text_write_string(struct.file, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
-					file_text_writeln(struct.file);
-					file_text_write_string(struct.file, str);
-					file_text_writeln(struct.file);
-					file_text_writeln(struct.file);
-					struct.line++;
+					if str!=_prev
+					{
+						file_text_write_string(struct.file, struct.line);
+						file_text_writeln(struct.file);
+						file_text_write_string(struct.file, srt_time_stringify(_from)+" --> "+srt_time_stringify(_to))
+						file_text_writeln(struct.file);
+						file_text_write_string(struct.file, str);
+						file_text_writeln(struct.file);
+						file_text_writeln(struct.file);
+						struct.line++;
+					}
+					_prev = ""
+					
+					var _to = reference.get_timestamp(i, false);
+					if _to-_start>_duration-time_tolerance break;
 				}
+				_prev = translate.original[min(i,s-1)];
 				break
 			}			
 			
@@ -437,22 +482,25 @@ function srt_generate(struct)
 			for(var i=0; i<s; i++)
 			{
 				var time = buffer_read(translate.timestamp_seek, buffer_f32);
-				if ((time_from+time_tolerance)-time)<0 break;
-				if ((time_from+time_tolerance)-time)<t {t=(time_from+time_tolerance)-time; line=i; _t = time;}
+				if time>time_from-time_tolerance {line=i; break}
 			}
 			if line==-1 log("Can't find line for timestamp "+srt_time_stringify(time_from))
 			//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
 			
 			var offset;
 			offset = task[5];
-			if is_undefined(offset) offset = time_from - source.get_timestamp(task[1], true);			
+			if is_undefined(offset) offset = time_from - source.get_timestamp(task[1], true);		
+			var _start = translate.get_timestamp(line, true);	
 			for(var i=line; i<s; i++)
 			{
 				translate.scroll = clamp(translate.scroll, i-20, i-10);
 				translate.visual_set_line(i, c_blue);
+				
+				var _to = translate.get_timestamp(i, true);
+				if _to-_start>_duration-time_tolerance break;
+				
 				var _from = translate.get_timestamp(i, true);
 				var _to = translate.get_timestamp(i, false);
-				if _from>time_to+time_tolerance break;
 				
 				var str = translate.original[i];
 				if str!=_prev
@@ -468,7 +516,8 @@ function srt_generate(struct)
 				}
 				_prev = ""
 				
-				if _to>time_to+time_tolerance break;
+				var _to = translate.get_timestamp(i, false);
+				if _to-_start>_duration-time_tolerance break;
 			}
 			_prev = translate.original[min(i,s-1)];
 			break

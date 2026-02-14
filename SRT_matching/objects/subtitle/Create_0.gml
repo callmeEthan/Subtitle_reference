@@ -59,6 +59,10 @@ get_timestamp = function(index, start=true)
 	if start return buffer_peek(timestamp, (index*2)*buffer_sizeof(buffer_f32), buffer_f32);
 	else return buffer_peek(timestamp, (index*2+1)*buffer_sizeof(buffer_f32), buffer_f32);
 }
+line_get_score = function(index)
+{
+	return buffer_peek(match_score, index*buffer_sizeof(buffer_f16), buffer_f16)
+}
 
 display_phonic = function()
 {
@@ -93,11 +97,11 @@ display_phonic = function()
 	{
 		draw_text_transformed(x, _h*_y, i+1, fontsize, fontsize, 0);	// index
 		var _x = x+ _n+_space*2
-		var l = lines[i]
 		var ind = i;
 		var col = buffer_peek(visual, ind*buffer_sizeof(buffer_u32), buffer_u32);
 	
-		var str = lines[i];
+		var str = lines[i]
+		//var str = string_replace(original[i], "\n", " ")
 		var _w = string_width(str);
 		draw_set_color(col)
 		draw_rectangle(_x-_space/2, _h*_y, _x+_w+_space/2, _h*(_y+1), false);

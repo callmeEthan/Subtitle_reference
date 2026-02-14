@@ -16,14 +16,23 @@ function string_compare(string1, string2, ngram=3)
 		if string1==string2 return 1 else return 0;
 	}
 	
-	var _score=0;
+	var _score=0, _count=0;
 	//var _max=max(string_length(string1), string_length(string2))-ngram;
-	var _max = string_length(string1);
+	//var _max = string_length(string1);
 	var s = string_length(string1)-ngram;
 	for(var i=1; i<=s+1; i++)
 	{
+		_count++
 		var match = string_copy(string1, i, ngram);
 		if string_pos(match, string2)>0 _score++
 	}
-	return _score/_max;
+	
+	var s = string_length(string2)-ngram;
+	for(var i=1; i<=s+1; i++)
+	{
+		_count++
+		var match = string_copy(string2, i, ngram);
+		if string_pos(match, string1)>0 _score++
+	}
+	return _score/_count;
 }
