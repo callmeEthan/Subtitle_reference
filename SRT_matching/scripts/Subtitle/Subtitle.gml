@@ -2,10 +2,10 @@ globalvar match_length,match_minimum, match_maximum, time_tolerance, fuzzy_match
 remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
 match_length = 4; // Minimum number of character for fuzzy matching, skip otherwise
 match_minimum = 0.4; // Minimum score to consider as matched, otherwise retain original line
-match_maximum = 100; // Maximum score for matching, skip checking other line.
+match_maximum = 20; // Maximum score for matching, skip checking other line.
 time_tolerance = 0.5;
 fuzzy_match = 0.5; // mininum match per line
-expand_search = 2; //
+expand_search = 2; // if string not match or too short, expand to other line for matching
 dictionary = ds_list_create();
 
 function string_contraction(str)

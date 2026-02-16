@@ -146,7 +146,7 @@ show_progress = function(text, progress=-1)
 	progress_bar = progress;
 }
 
-//load_config();
+load_config();
 load_dictionary();
 pending_reference = [-1,-1];
 debugging=false;

@@ -162,7 +162,7 @@ function generate_nfo(file, episode, output)
 }
 
 globalvar match_speed, import_speed;
-match_speed = 300;
+match_speed = 200;
 import_speed = 100;
 
 function save_config(filename = "\\Config.ini")
@@ -171,7 +171,7 @@ function save_config(filename = "\\Config.ini")
 	filename = path+filename
 	ini_open(filename)
 	ini_write_real("Setting", "remove_colon", remove_colon)
-	ini_write_real("Setting", "match_tolerance", match_tolerance)
+	ini_write_real("Setting", "expand_search", expand_search)
 	ini_write_real("Setting", "match_minimum", match_minimum)
 	ini_write_real("Setting", "match_maximum", match_maximum)
 	ini_write_real("Setting", "time_tolerance", time_tolerance)
@@ -187,7 +187,7 @@ function load_config(filename = "\\Config.ini")
 	if !file_exists(filename) {log("[c_red]Failed to load setting[/], file not found ("+string(filename)+")"); return}
 	ini_open(filename)
 	remove_colon=ini_read_real("Setting", "remove_colon", remove_colon)
-	match_tolerance = ini_read_real("Setting", "match_tolerance", match_tolerance)
+	expand_search = ini_read_real("Setting", "expand_search", expand_search)
 	match_minimum = ini_read_real("Setting", "match_minimum", match_minimum)
 	match_maximum = ini_read_real("Setting", "match_maximum", match_maximum)
 	time_tolerance = ini_read_real("Setting", "time_tolerance", time_tolerance)
