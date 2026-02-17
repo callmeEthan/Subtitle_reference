@@ -1,10 +1,10 @@
 globalvar match_length,match_minimum, match_maximum, time_tolerance, fuzzy_match, dictionary, remove_colon, expand_search;
 remove_colon = 1; // If there's colon (:) then remove first part (speaker name)
 match_length = 4; // Minimum number of character for fuzzy matching, skip otherwise
-match_minimum = 0.4; // Minimum score to consider as matched, otherwise retain original line
-match_maximum = 20; // Maximum score for matching, skip checking other line.
+match_minimum = 0.5; // Minimum score to consider as matched, otherwise retain original line
+match_maximum = 100; // Maximum score for matching, skip checking other line.
 time_tolerance = 0.5;
-fuzzy_match = 0.5; // mininum match per line
+fuzzy_match = 0.6; // mininum match per line
 expand_search = 2; // if string not match or too short, expand to other line for matching
 dictionary = ds_list_create();
 
@@ -456,7 +456,6 @@ function task_override(struct, match)
 	}
 }
 
-
 function srt_generate_begin(source, reference, translate=-1)
 {
 	var filename;
@@ -479,12 +478,13 @@ function srt_generate_begin(source, reference, translate=-1)
 		task: 0,
 		size: ds_list_size(main.task),
 		debug: _debug,
+		prev: [],
 	}
 	return struct;
 }
 function srt_generate(struct)
 {
-	static _prev=""
+	//static _prev=""
 	if struct.task>=struct.size
 	{
 		if file_text_close(struct.file) {log("Saved to [c_yellow]"+string(struct.filename))} else {log("[c_red]Failed to write to "+string(struct.filename))}
@@ -549,7 +549,8 @@ function srt_generate(struct)
 					var _to = reference.get_timestamp(i, false)-offset;
 					var str = reference.original[i];
 				
-					if str!=_prev
+					//if str!=_prev
+					if check_prev_line(struct, i)
 					{
 						file_text_write_string(struct.file, struct.line);
 						file_text_writeln(struct.file);
@@ -560,35 +561,50 @@ function srt_generate(struct)
 						file_text_writeln(struct.file);
 						struct.line++;
 					}
-					_prev = ""
+					array_push(struct.prev, i);
+					if array_length(struct.prev)>5 array_delete(struct.prev, 0, 1);
+					//_prev = ""
 					
 					var _to = reference.get_timestamp(i, false);
 					if _to-_start>_duration-time_tolerance break;
 				}
-				_prev = reference.original[min(i,reference.size-1)];
+				//_prev = reference.original[min(i,reference.size-1)];
 				break
 			}			
 			
 		case subtitle_task.offset:
 			//if main.debugging=true break
-			var line = 0;
-			var time_from = reference.get_timestamp(task[2], true);
-			var time_to = reference.get_timestamp(task[4], false);
-			
-			var t = infinity, _t;
-			var s = array_length(translate.lines);
-			buffer_seek(translate.timestamp_seek, buffer_seek_start, 0);
-			for(var i=0; i<s; i++)
-			{
-				var time = buffer_read(translate.timestamp_seek, buffer_f32);
-				if time>time_from-time_tolerance {line=i; break}
-			}
-			if line==-1 log("Can't find line for timestamp "+srt_time_stringify(time_from))
-			//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
-			
+			var line = 0;			
 			var offset;
 			offset = task[5];
-			if is_undefined(offset) offset = time_from - source.get_timestamp(task[1], true);		
+			if is_undefined(offset)
+			{
+				var time_from = reference.get_timestamp(task[2], true);
+				var time_to = reference.get_timestamp(task[4], false);
+				offset = time_from - source.get_timestamp(task[1], true);		
+				var t = infinity, _t;
+				var s = array_length(translate.lines);
+				buffer_seek(translate.timestamp_seek, buffer_seek_start, 0);
+				for(var i=0; i<s; i++)
+				{
+					var time = buffer_read(translate.timestamp_seek, buffer_f32);
+					if time>time_from-time_tolerance {line=i; break}
+				}
+				if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(time_from)); break}
+				//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
+			} else {
+				var time_from = source.get_timestamp(task[1], true);
+				var time_to = source.get_timestamp(task[3], false);
+				var t = infinity, _t;
+				var s = array_length(translate.lines);
+				buffer_seek(translate.timestamp_seek, buffer_seek_start, 0);
+				for(var i=0; i<s; i++)
+				{
+					var time = buffer_read(translate.timestamp_seek, buffer_f32);
+					if time-offset>time_from-time_tolerance {line=i; break}
+				}
+				if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(time_from)); break}
+			}
 			var _start = translate.get_timestamp(line, true);	
 			for(var i=line; i<s; i++)
 			{
@@ -602,7 +618,8 @@ function srt_generate(struct)
 				var _to = translate.get_timestamp(i, false);
 				
 				var str = translate.original[i];
-				if str!=_prev
+				//if str!=_prev
+				if check_prev_line(struct, i)
 				{
 					file_text_write_string(struct.file, struct.line);
 					file_text_writeln(struct.file);
@@ -613,12 +630,14 @@ function srt_generate(struct)
 					file_text_writeln(struct.file);
 					struct.line++;
 				}
-				_prev = ""
+				array_push(struct.prev, i);
+				if array_length(struct.prev)>8 array_delete(struct.prev, 0, 1);
+				//_prev = ""
 				
 				var _to = translate.get_timestamp(i, false);
 				if _to-_start>_duration-time_tolerance break;
 			}
-			_prev = translate.original[min(i,s-1)];
+			//_prev = translate.original[min(i,s-1)];
 			break
 			
 		case "legacy":
@@ -668,6 +687,15 @@ function srt_generate(struct)
 			}
 			_prev = reference.original[min(i,s-1)];
 			break
+	}
+	return true;
+}
+function check_prev_line(struct, line)
+{
+	var s = array_length(struct.prev);
+	for(var i=0; i<s; i++)
+	{
+		if struct.prev[i]==line return false;
 	}
 	return true;
 }
