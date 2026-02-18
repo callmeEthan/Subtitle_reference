@@ -1,7 +1,7 @@
 # Subtitle cross-reference tool
 ### Sync subtitles in different language
-> This tool is not for creators, only average viewers, who often only have access to english subtitle.  
-If you have access to edit timeline, it is better to use something like Subtitle Remapper.
+> This tool is for the average viewers, who often only have access to english subtitle.  
+If you are author and have access to edit timeline, it is better to use something like Subtitle Remapper.
 
 ![alt text](https://github.com/callmeEthan/Subtitle_reference/blob/main/thumb.jpg?raw=true)
 ### Introduction
