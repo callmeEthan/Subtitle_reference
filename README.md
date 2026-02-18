@@ -12,9 +12,9 @@ Want to share a fan-edit media? but subtitle in your prefered language is not av
 ### Requirement
 - Compiled for windows.
 - Only support .srt format subtitles, 3 file are required:
-	- Subtitle for the edited media, use as **Source**, provided by the author, in the original language (english).
-	- Subtitle for the original/unedited media, to be used as **Reference**, in the same language (english).
-	- **Translated** subtitle for the original/uneditted media, in the preferred language (ie Spanish), it must have timestamps synchornized to the **reference** subtitle.
+	- Subtitle for the edited media, use as **Source**, provided by the author, in the original language (example: Mission.Impossible.Dead.Reckoning.2023[Spence-edit].eng.srt).
+	- Subtitle for the original/unedited media, to be used as **Reference**, in the same language (example: Mission.Impossible.Dead.Reckoning.2023.eng.srt).
+	- **Translated** subtitle for the original/uneditted media, in the preferred language (example: Mission.Impossible.Dead.Reckoning.2023.fin.srt), it must have timestamps synchornized to the **reference** subtitle.
 
 ### How it works?
 This tool break all subtitle lines down using Metaphone algorithm, indexing words by their English pronunciation, then compare each line.  
