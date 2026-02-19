@@ -588,9 +588,19 @@ function srt_generate(struct)
 				for(var i=0; i<s; i++)
 				{
 					var time = buffer_read(translate.timestamp_seek, buffer_f32);
-					if time>time_from-time_tolerance {line=i; break}
+					var _d = abs(time-time_from);
+					if t!=infinity && _d>t break;
+					if _d<1 && _d<t {t=_d; line=i}
 				}
-				if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(time_from)); break}
+				if line==-1
+				{
+					buffer_seek(translate.timestamp_seek, buffer_seek_start, 0);
+					for(var i=0; i<s; i++)
+					{
+						var time = buffer_read(translate.timestamp_seek, buffer_f32);
+						if time>time_from-time_tolerance {line=i; break}
+					}
+				}
 				//show_debug_message("At "+srt_time_stringify(task[1])+": Seek timestamp "+srt_time_stringify(task[3])+" found: "+srt_time_stringify(_t)+", line "+string(line)+": "+string(reference.original[line]));
 			} else {
 				var time_from = source.get_timestamp(task[1], true);
@@ -601,9 +611,18 @@ function srt_generate(struct)
 				for(var i=0; i<s; i++)
 				{
 					var time = buffer_read(translate.timestamp_seek, buffer_f32);
-					if time-offset>time_from-time_tolerance {line=i; break}
+					var _d = abs((time-offset)-time_from);
+					if _d<1 && _d<t {t=_d; line=i}
 				}
-				if line==-1 {log("Can't find line for timestamp "+srt_time_stringify(time_from)); break}
+				if line==-1 
+				{
+					buffer_seek(translate.timestamp_seek, buffer_seek_start, 0);
+					for(var i=0; i<s; i++)
+					{
+						var time = buffer_read(translate.timestamp_seek, buffer_f32);
+						if time-offset>time_from-time_tolerance {line=i; break}
+					}
+				}			
 			}
 			var _start = translate.get_timestamp(line, true);	
 			for(var i=line; i<s; i++)

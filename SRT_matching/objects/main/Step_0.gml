@@ -2,6 +2,7 @@ if spinning<1 spinning+=1/100 else spinning=0
 
 if keyboard_check_pressed(vk_f1) add_source()
 if keyboard_check_pressed(vk_f2) add_reference()
+if keyboard_check_pressed(vk_f3) add_translate()
 
 if keyboard_check_pressed(vk_f5) {game_restart()}
 if keyboard_check_pressed(vk_f12) {show_config()}

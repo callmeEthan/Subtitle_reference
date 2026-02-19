@@ -82,7 +82,7 @@ add_reference = function()
 			break
 	}
 	ref_offset(reference, translate)
-	log("reference offset="+string(reference.offset));
+	log("reference file added: "+string(filename)+", offset="+string(reference.offset));
 	loaded=2;
 }
 add_translate = function()
@@ -110,7 +110,7 @@ add_translate = function()
 	translate.file_count++;
 	
 	ref_offset(translate, reference)
-	log("translate offset="+string(translate.offset))
+	log("translate file added: "+string(filename)+", offset="+string(translate.offset))
 }
 ref_offset = function(obj, ref)
 {
@@ -152,6 +152,7 @@ pending_reference = [-1,-1];
 debugging=false;
 log("Press [c_lime]<F1>[/] to add [c_yellow]Source[/] subtitle");
 log("Press [c_lime]<F2>[/] to add [c_yellow]Reference[/] subtitle");
+log("Press [c_lime]<F3>[/] to add [c_yellow]Translated[/] subtitle");
 log("Press [c_orange]<F5>[/] to restart and remove all subtitle");
 
 render_button = function(x, y, radius, ind, alpha=0.1)
