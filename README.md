@@ -35,6 +35,12 @@ When matching has finished, you can click the save button, or press [Ctrl+S] to 
 Press [F5] to restart application, flush all current data.  
 > When saving subtitle, it also save Debugging.txt, this file contain all the line failed to match, retained from the source subtitle. It can be useful for manual fixing/translation.
 
+This tool get the timing by comparing the first or latter part of the string, this works most of the time but if it does fails, it will simply use the timing of the first line matched, which isnt very accurate. In which case you can use AutoSubSync tool to finetune the timing further.
+Match Color:
+- Blue or Navy blue: current line being check
+- Red: Fail to match, retain from source
+- Green: Great match, with good timing
+- Purple: Match, but no timing found
 ### Result
 The result may not be perfect as there are many factor, the tool mostly do guesswork to tolerate typo, missing words, line mismatch, time sync.     
 Some factor to consider:
