@@ -574,7 +574,7 @@ function srt_generate(struct)
 			
 		case subtitle_task.offset:
 			//if main.debugging=true break
-			var line = 0;			
+			var line = -1;			
 			var offset;
 			offset = task[5];
 			if is_undefined(offset)
